@@ -1,0 +1,8 @@
+,NDF,Lignin,CP,NDICP,Starch,Fat,Ash,DistType,Param
+NDF,1,0.64,0.22,0.47,0.92,0.36,0.5,Normal,441;59
+Lignin,,1,0.21,0.49,0.66,0.22,0.47,Loglogistic,3;32;9.3
+CP,,,1,0.45,0.4,0,0.38,Loglogistic,21;62;11.3
+NDICP,,,,1,0.49,0,0.38,Loglogistic,3;11;6.1
+Starch,,,,,1,0.31,0.61,Weibull,8.9;613
+Fat,,,,,,1,0.21,Normal,33;4
+Ash,,,,,,,1,Normal,44;11

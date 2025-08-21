@@ -1,0 +1,12 @@
+run_program = "Analysis" # Simulation or Analysis 
+animal_file  = "cncps_test_animal.csv"
+feed_file = 'cncps_test_feed.csv'
+library_path = "C:/Users/lab/Desktop/CNU_CNM_R.v21.1.Win"
+
+#num_iter = 100
+#result_data = "ADG,MY"
+#cor_dir = "./cors"
+
+
+
+

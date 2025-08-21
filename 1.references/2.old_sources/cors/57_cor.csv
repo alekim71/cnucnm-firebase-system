@@ -1,0 +1,5 @@
+,NDF,Lignin,CP,Ash,DistType,Param
+NDF,1,0.21,0.1,0.27,PearsonV,17.3;1157
+Lignin,,1,-0.21,-0.1,Logistic,10;1
+CP,,,1,0.35,PearsonV,53.5;3874
+Ash,,,,1,Loglogistic,5;11;9.8

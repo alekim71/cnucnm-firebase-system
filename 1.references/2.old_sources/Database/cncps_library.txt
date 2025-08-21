@@ -1,0 +1,82 @@
+#===================#
+# Default setting   #
+#===================#
+
+# Path setting 
+library_path = 'C:/Users/hspark/Project/15.CNCPS/2.CNCPS/2.CNCPS_R'
+#.libPaths(library_path)
+
+
+# Database files 
+input_database = sprintf('%s/Database/InputDatabase.txt', library_path) 
+feed_library = sprintf('%s/Database/KoreanFeedLibrary_convert.csv', library_path) 
+#feed_library = sprintf('%s/Database/KoreanFeedLibrary_subSet.csv', library_path) 
+
+# Getting feed information 
+feed_calculation = sprintf('%s/Libs/FeedMixedRatioCalculation.R', library_path) 
+feed_module = sprintf('%sLibs/FeedMixedRatioCalculationModule.R', library_path) 
+
+
+#Rumen & intestinal source 
+rumen_model_execute = sprintf('%s/Libs/RumenModelCalculation.R', library_path) 
+rumen_model_module = sprintf('%s/Libs/RumenModelCalculationModule.R', library_path) 
+
+intestinal_model_execute = sprintf('%s/Libs/IntestinalModelCalculation.R', library_path) 
+intestinal_model_module = sprintf('%s/Libs/IntestinalModelCalculationModule.R', library_path) 
+
+
+# Requirement calculation module 
+maintain_requirement_execute = sprintf('%s/Libs/MaintainEnergyCalculation.R', library_path)
+maintain_requirement_module = sprintf('%s/Libs/MaintainEnergyCalculationModule.R', library_path) 
+
+growth_requirement_execute = sprintf('%s/Libs/GrowthRequirementCalculation.R', library_path) 
+growth_requirement_module = sprintf('%s/Libs/GrowthRequirementCalculationModule.R', library_path) 
+
+body_reserves_execute = sprintf('%s/Libs/BodyReservesCalculation.R', library_path) 
+body_reserves_module = sprintf('%s/Libs/BodyReservesCalculationModule.R', library_path) 
+
+lactation_requirement_execute = sprintf('%s/Libs/LactationRequirementCalculation.R', library_path)
+lactation_requirement_module = sprintf('%s/Libs/LactationRequirementCalculationModule.R', library_path)
+
+aminoacid_requirement_execute = sprintf('%s/Libs/AminoacidRequirementCalculation.R', library_path)
+aminoacid_requirement_module = sprintf('%s/Libs/AminoacidRequirementCalculationModule.R', library_path)
+
+mineral_requirement_execute = sprintf('%s/Libs/MineralRequirementCalculation.R', library_path) 
+mineral_requirement_module = sprintf('%s/Libs/MineralRequirementCalculationModule.R', library_path) 
+
+dmi_prediction_execute = sprintf('%s/Libs/IntakePredictionCalculation.R", library_path)
+dmi_prediction_module = sprintf('%s/Libs/IntakePredictionCalculationModule.R', library_path) 
+
+production_prediction_execute = sprintf('%s/Libs/ProductPredictCalculation.R', library_path) 
+production_prediction_module = sprintf('%s/Libs/ProductPredictCalculationModule.R', library_path) 
+
+write_summary = sprintf('%s/Libs/CNCPSsummary.R', library_path) 
+
+# temporary files 
+tmp_feed_database = sprintf('%s/tmp_cncps/feed_database.csv', library_path)
+tmp_dm_percent = sprintf('%s/tmp_cncps/feed_dm_perc.csv' , library_path) 
+tmp_intake_p_dm =  sprintf('%s/'tmp_cncps/feed_intake_p_dm_perc.csv', library_path)
+tmp_intake_p_day =  sprintf('%s/tmp_cncps/feed_intake_p_dm_day.csv', library_path)
+tmp_dm_intake =  sprintf('%s/tmp_cncps/dm_intake.csv', library_path)
+tmp_rumen_passage_rate =  sprintf('%s/tmp_cncps/rumen_passage_rate.csv', library_path)
+tmp_adj_rumen_passage_rate_by_ph =  sprintf('%s/tmp_cncps/adj_rumen_passage_rate_by_ph.csv', library_path)
+tmp_rumen_passage_rate_by_ph =  sprintf('%s/tmp_cncps/rumen_passage_rate_by_ph.csv', library_path)
+tmp_rumen_degradation =  sprintf('%s/tmp_cncps/rumen_degradation.csv', library_path)
+tmp_microbial_fermentation =  sprintf('%s/tmp_cncps/microbial_fermentation.csv', library_path)
+tmp_ruminal_nitrogen =  sprintf('%s/tmp_cncps/ruminal_nitrogen.csv', library_path)
+tmp_adj_ruminal_feed_degradation =  sprintf('%s/tmp_cncps/adj_ruminal_feed_degradation.csv', library_path)
+tmp_ruminal_feed_escaping =  sprintf('%s/tmp_cncps/ruminal_feed_escaping.csv', library_path)
+tmp_microbial_composition =  sprintf('%s/tmp_cncps/microbial_composition.csv', library_path)
+tmp_rumen_degradable_feed =  sprintf('%s/tmp_cncps/rumen_degradable_feed.csv', library_path)
+tmp_intestinal_digestibilites =  sprintf('%s/tmp_cncps/intestinal_degestibilities.csv', library_path)
+tmp_total_intestinal_supply =  sprintf('%s/tmp_cncps/total_intestinal_supply.csv', library_path)
+tmp_prediction_intestinal_digestion =  sprintf('%s/tmp_cncps/prediction_intestinal_digest.csv', library_path)
+tmp_fecal_output =  sprintf('%s/tmp_cncps/fecal_output.csv', library_path)
+tmp_total_digest_nutrients =  sprintf('%s/tmp_cncps/total_digest_nutrients.csv', library_path)
+tmp_aminoacid_composition =  sprintf('%s/tmp_cncps/aminoacid_composition.csv', library_path)
+tmp_bacterial_amino_acid =  sprintf('%s/tmp_cncps/bacterial_amino_acid_supply_to_the_duodenum.csv', library_path)
+tmp_bacterial_amino_acid_digestion =  sprintf('%s/tmp_cncps/bacterial_amino_acid_digestion.csv', library_path)
+tmp_feed_amino_acid_supply =  sprintf('%s/tmp_cncps/feed_amino_acid_supply.csv', library_path)
+tmp_feed_amino_acid_digestion =  sprintf('%s/tmp_cncps/feed_amino_acid_digestion.csv', library_path)
+tmp_duodenal_supply =  sprintf('%s/tmp_cncps/total_duodenal_amino_acid_supply.csv', library_path)
+tmp_total_metabolizable_supply =  sprintf('%s/tmp_cncps/total_metabolizable_supply.csv', library_path)

@@ -1,0 +1,81 @@
+#==========# 
+# Database # 
+#==========# 
+
+# breed_table : breed, MW, a1, birth_weight, MY(kg), MFP(%), MPP(%), TrueMPP(%), first_conception_weight 
+breed_table = list(c("Hanwoo", 394, 0.07, 27, 8, 4.7, 4.1, 3.84, 0.6),
+	c("Holstein", 680, 0.073, 46, 46, 3.5, 3.3, 3.07, 0.55), 
+	c("Angus", 800, 0.07, 31, 8, 4, 3.8, 3.53, 0.6), 
+	c("Jersey", NaN, 0.073, 32, 34, 5.2, 3.9, 3.63, 0.55), 	
+	c("Aryshire"), 
+	c("Brown Swiss"), 
+	c("Braford"), 
+	c("Brahman"), 
+	c("Brangus"), 
+	c("Braunvieh"),
+	c("Canchin"), 
+	c("Charolais"), 
+	c("Chianina"), 
+	c("Friesian"), 
+	c("Galloway"), 
+	c("Gelbvieh"), 
+	c("Guernsey"), 
+	c("Gir"), 
+	c("Guzerat"),  
+	c("Hereford"), 
+	c("Limousine"), 
+	c("Longhorn"), 
+	c("Maine Anjou"), 
+	c("Nellore"), 
+	c("Piedmontese"), 
+	c("Pinzgauer"), 
+	c("Polled Here."), 
+	c("Red Poll"), 
+	c("Sahiwal"), 
+	c("Salers"), 
+	c("S.Gertudis"), 
+	c("Shorthorn"), 
+	c("Simmental"), 
+	c("South Devon"), 
+	c("Tarentaise")
+	)
+
+
+a1_table = list(c('Bos taurus beef', 0.070),
+	c('Lactation dairy cow', 0.073), 
+	c('dairy cow, steer', 0.078), 
+	c('Bos indicus', 0.064), 
+	c('tropical dual purpose', 0.069)
+	)
+
+
+# Standing time, position_chagne, flat_distance, slop_distance  
+standing_hour_list= c(12,12,15,15,15)
+position_change_list = c(6, 9, 9, 9, 9)
+flat_distance_list = c(0, 500, 1000, 1500, 1500)
+slop_distance_list = c(0, 1, 1, 1, 1)
+
+# Animal type 
+animal_type_list = c("milk cattle/beef", "growing cattle", "lactating cattle", "Dry cattle", "Heifer")
+
+# Sex 
+sex_code_list =  c ("Bull", "Steer", "Heifer", "Cow") 
+
+# Breed type 
+breed_type_list = c("Hanwoo", "Holstein * Hanwoo", "Holstein") 
+
+# Additional treat
+additional_treat_code_list =  c("None", "Ionophore", "Implant", "Implant + Ionophore")
+
+# Feed method 
+feed_method_list = c("forage&gain seperate", "TMR") 
+
+# calf implant 
+implant_tag_list = c("no", "yes") 
+
+
+# Hair condition 
+hair_condition_list = c("Dry & Clean", "Clay on underbody", "Clay on underbody and sidebody", "Clay on whole body") 
+
+# cowshed 
+cowshed_list = c("mooring", "pen (2.8~4.6 m^2)", "pen (4.6-9.3 m^2)", "pen (9.3-18.6 m^2)", "pen (>18.6 m^2)")

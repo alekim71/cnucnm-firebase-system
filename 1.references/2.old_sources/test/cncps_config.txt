@@ -1,0 +1,12 @@
+run_program = "Analysis" # Simulation or Analysis 
+num_iter = 100
+input_data = "target_ADG,Target_DMI,age,FBW,CBW,BCS"
+result_data = "ADG,MY"
+cor_dir = "./cors"
+
+
+animal_file  = "cncps_test_animal.csv"
+feed_file = 'cncps_test_feed.csv'
+library_path = "C:/Users/hspark/Project/15.CNCPS/2.CNCPS/2.CNCPS_R/CNU_CNM_R.v21.1.Win"
+
+
