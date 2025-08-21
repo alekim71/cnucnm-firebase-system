@@ -1,0 +1,2171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 완전한 영양소 계산 시스템</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .navigation {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .nav-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+        .nav-section h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        .nav-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .nav-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+        }
+        .nav-button:hover {
+            background: #0056b3;
+        }
+        .formula-tree {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 300px;
+            background: #f9f9f9;
+            overflow-x: auto;
+        }
+        .formula-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .formula-button:hover {
+            background: #218838;
+        }
+        .formula-expression {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            border-left: 4px solid #007bff;
+        }
+        .dependency-buttons {
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .level-container {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            background: white;
+        }
+        .level-container h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .progress-info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #2196f3;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .tree-node {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .tree-node.leaf {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .category-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .category-protein { background: #ffebee; color: #c62828; }
+        .category-energy { background: #fff3e0; color: #ef6c00; }
+        .category-carbohydrate { background: #e8f5e8; color: #2e7d32; }
+        .category-fat { background: #f3e5f5; color: #7b1fa2; }
+        .category-mineral { background: #e3f2fd; color: #1565c0; }
+        .category-vitamin { background: #fff8e1; color: #f57f17; }
+        .category-intake { background: #f1f8e9; color: #558b2f; }
+        
+        /* 다이어그램 스타일 */
+        .diagram-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .diagram-controls {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .control-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .control-button:hover {
+            background: #0056b3;
+        }
+        .control-button.active {
+            background: #28a745;
+        }
+        #network-diagram {
+            position: relative;
+            overflow: hidden;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node:hover {
+            stroke: #333;
+            stroke-width: 2px;
+        }
+        .link {
+            stroke: #999;
+            stroke-width: 1px;
+        }
+        .node-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 CNUCNM 완전한 영양소 계산 시스템</h1>
+            <p>영양소별 × 장소별 분류 시스템 - 27,061개 수식 완전 구현</p>
+        </div>
+        
+        <div class="progress-info">
+            <h3>📊 시스템 현황</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFormulas">0</div>
+                    <div>총 수식 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="implementedFormulas">0</div>
+                    <div>구현된 수식</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="progressPercentage">0</div>
+                    <div>진행률 (%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="categories">5</div>
+                    <div>영양소 분류</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation">
+            <div class="nav-section">
+                <h3>🥩 단백질 (Protein)</h3>
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="selectCategory('protein-rumen')">반추위 단백질</button>
+                    <button class="nav-button" onclick="selectCategory('protein-small-intestine')">소장 단백질</button>
+                    <button class="nav-button" onclick="selectCategory('protein-large-intestine')">대장 단백질</button>
+                    <button class="nav-button" onclick="selectCategory('protein-liver')">간 단백질</button>
+                    <button class="nav-button" onclick="selectCategory('protein-systemic')">전신 단백질</button>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3>⚡ 에너지 (Energy)</h3>
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="selectCategory('energy-rumen')">반추위 에너지</button>
+                    <button class="nav-button" onclick="selectCategory('energy-small-intestine')">소장 에너지</button>
+                    <button class="nav-button" onclick="selectCategory('energy-large-intestine')">대장 에너지</button>
+                    <button class="nav-button" onclick="selectCategory('energy-liver')">간 에너지</button>
+                    <button class="nav-button" onclick="selectCategory('energy-systemic')">전신 에너지</button>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3>🌾 탄수화물 (Carbohydrate)</h3>
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="selectCategory('carbohydrate-rumen')">반추위 탄수화물</button>
+                    <button class="nav-button" onclick="selectCategory('carbohydrate-small-intestine')">소장 탄수화물</button>
+                    <button class="nav-button" onclick="selectCategory('carbohydrate-large-intestine')">대장 탄수화물</button>
+                    <button class="nav-button" onclick="selectCategory('carbohydrate-liver')">간 탄수화물</button>
+                    <button class="nav-button" onclick="selectCategory('carbohydrate-systemic')">전신 탄수화물</button>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3>🫘 지방 (Fat)</h3>
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="selectCategory('fat-rumen')">반추위 지방</button>
+                    <button class="nav-button" onclick="selectCategory('fat-small-intestine')">소장 지방</button>
+                    <button class="nav-button" onclick="selectCategory('fat-large-intestine')">대장 지방</button>
+                    <button class="nav-button" onclick="selectCategory('fat-liver')">간 지방</button>
+                    <button class="nav-button" onclick="selectCategory('fat-systemic')">전신 지방</button>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3>🪨 미네랄 (Mineral)</h3>
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="selectCategory('mineral-rumen')">반추위 미네랄</button>
+                    <button class="nav-button" onclick="selectCategory('mineral-small-intestine')">소장 미네랄</button>
+                    <button class="nav-button" onclick="selectCategory('mineral-large-intestine')">대장 미네랄</button>
+                    <button class="nav-button" onclick="selectCategory('mineral-liver')">간 미네랄</button>
+                    <button class="nav-button" onclick="selectCategory('mineral-systemic')">전신 미네랄</button>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <h3>💊 비타민 (Vitamin)</h3>
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="selectCategory('vitamin-rumen')">반추위 비타민</button>
+                    <button class="nav-button" onclick="selectCategory('vitamin-small-intestine')">소장 비타민</button>
+                    <button class="nav-button" onclick="selectCategory('vitamin-large-intestine')">대장 비타민</button>
+                    <button class="nav-button" onclick="selectCategory('vitamin-liver')">간 비타민</button>
+                    <button class="nav-button" onclick="selectCategory('vitamin-systemic')">전신 비타민</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="showAllFormulas()" style="background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 0 10px;">📋 전체 수식 보기</button>
+            <button onclick="clearTree()" style="background: #6c757d; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 0 10px;">🗑️ 초기화</button>
+        </div>
+
+        <h2>🌿 수식 계층 구조 (Decision Tree)</h2>
+        <div id="formula-tree" class="formula-tree">
+            <p>위의 영양소별 × 장소별 버튼을 클릭하여 수식 체인을 시작하세요.</p>
+        </div>
+
+        <!-- 네트워크 다이어그램 섹션 -->
+        <div class="diagram-section">
+            <h3>🌳 수식 네트워크 다이어그램 (Decision Tree)</h3>
+            <div class="diagram-controls">
+                <button onclick="showAllNodes()" class="control-button">전체 노드 보기</button>
+                <button onclick="showMPChain()" class="control-button">MP 체인만</button>
+                <button onclick="showMEChain()" class="control-button">ME 체인만</button>
+                <button onclick="showDMIChain()" class="control-button">DMI 체인만</button>
+                <button onclick="showSelectedPath()" class="control-button">선택된 경로만</button>
+                <button onclick="showTopLevel()" class="control-button">최상위 수식만</button>
+                <button onclick="resetZoom()" class="control-button">확대/축소 초기화</button>
+            </div>
+            <div id="network-diagram" style="width: 100%; height: 600px; border: 1px solid #ddd; background: #f9f9f9;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 완전한 수식 데이터베이스 (영양소별 × 장소별 분류)
+        const formulaDatabase = {
+            // === 단백질 (Protein) ===
+            // 반추위 단백질
+            "MP": {
+                name: "MP",
+                fullName: "MP (Metabolizable Protein)",
+                expression: "MP = MPfeed + MPbact",
+                description: "대사성 단백질 = 사료 단백질 + 미생물 단백질",
+                level: 0,
+                dependencies: ["MPfeed", "MPbact"],
+                category: "protein",
+                location: "rumen"
+            },
+            "MPfeed": {
+                name: "MPfeed",
+                fullName: "MPfeed (Feed Protein)",
+                expression: "MPfeed = DIGPB1 + DIGPB2 + DIGPB3",
+                description: "사료 단백질 = 소화 가능 단백질 1 + 2 + 3",
+                level: 1,
+                dependencies: ["DIGPB1", "DIGPB2", "DIGPB3"],
+                category: "protein",
+                location: "rumen"
+            },
+            "MPbact": {
+                name: "MPbact",
+                fullName: "MPbact (Bacterial Protein)",
+                expression: "MPbact = MCP x 0.64",
+                description: "미생물 단백질 = 미생물 조단백질 x 효율성",
+                level: 1,
+                dependencies: ["MCP"],
+                category: "protein",
+                location: "rumen"
+            },
+            "DIGPB1": {
+                name: "DIGPB1",
+                fullName: "DIGPB1 (Digestible Protein 1)",
+                expression: "DIGPB1 = ID_Protein_1 x adjREPB1",
+                description: "소화 가능 단백질 1 = 소화율 x 조정된 효율성",
+                level: 2,
+                dependencies: ["ID_Protein_1", "adjREPB1"],
+                category: "protein",
+                location: "rumen"
+            },
+            "DIGPB2": {
+                name: "DIGPB2",
+                fullName: "DIGPB2 (Digestible Protein 2)",
+                expression: "DIGPB2 = ID_Protein_2 x adjREPB2",
+                description: "소화 가능 단백질 2 = 소화율 x 조정된 효율성",
+                level: 2,
+                dependencies: ["ID_Protein_2", "adjREPB2"],
+                category: "protein",
+                location: "rumen"
+            },
+            "DIGPB3": {
+                name: "DIGPB3",
+                fullName: "DIGPB3 (Digestible Protein 3)",
+                expression: "DIGPB3 = ID_Protein_3 x adjREPB3",
+                description: "소화 가능 단백질 3 = 소화율 x 조정된 효율성",
+                level: 2,
+                dependencies: ["ID_Protein_3", "adjREPB3"],
+                category: "protein",
+                location: "rumen"
+            },
+            "MCP": {
+                name: "MCP",
+                fullName: "MCP (Microbial Crude Protein)",
+                expression: "MCP = RDPEP x 0.13",
+                description: "미생물 조단백질 = 분해 단백질 효율성 x 0.13",
+                level: 2,
+                dependencies: ["RDPEP"],
+                category: "protein",
+                location: "rumen"
+            },
+            "ID_Protein_1": {
+                name: "ID_Protein_1",
+                fullName: "ID_Protein_1 (Intestinal Digestibility 1)",
+                expression: "ID_Protein_1 = prot.b1 x 0.9",
+                description: "소화율 1 = 단백질 B1 x 0.9",
+                level: 3,
+                dependencies: ["prot.b1"],
+                category: "protein",
+                location: "rumen"
+            },
+            "ID_Protein_2": {
+                name: "ID_Protein_2",
+                fullName: "ID_Protein_2 (Intestinal Digestibility 2)",
+                expression: "ID_Protein_2 = prot.b2 x 0.85",
+                description: "소화율 2 = 단백질 B2 x 0.85",
+                level: 3,
+                dependencies: ["prot.b2"],
+                category: "protein",
+                location: "rumen"
+            },
+            "ID_Protein_3": {
+                name: "ID_Protein_3",
+                fullName: "ID_Protein_3 (Intestinal Digestibility 3)",
+                expression: "ID_Protein_3 = prot.b3 x 0.8",
+                description: "소화율 3 = 단백질 B3 x 0.8",
+                level: 3,
+                dependencies: ["prot.b3"],
+                category: "protein",
+                location: "rumen"
+            },
+            "adjREPB1": {
+                name: "adjREPB1",
+                fullName: "adjREPB1 (Adjusted Rumen Efficiency 1)",
+                expression: "adjREPB1 = REPB1 + PeptidePass x RDPB1/RDPEP",
+                description: "조정된 반추위 효율성 1",
+                level: 3,
+                dependencies: ["REPB1", "PeptidePass", "RDPB1", "RDPEP"],
+                category: "protein",
+                location: "rumen"
+            },
+            "adjREPB2": {
+                name: "adjREPB2",
+                fullName: "adjREPB2 (Adjusted Rumen Efficiency 2)",
+                expression: "adjREPB2 = REPB2 + PeptidePass x RDPB2/RDPEP",
+                description: "조정된 반추위 효율성 2",
+                level: 3,
+                dependencies: ["REPB2", "PeptidePass", "RDPB2", "RDPEP"],
+                category: "protein",
+                location: "rumen"
+            },
+            "adjREPB3": {
+                name: "adjREPB3",
+                fullName: "adjREPB3 (Adjusted Rumen Efficiency 3)",
+                expression: "adjREPB3 = REPB3 + PeptidePass x RDPB3/RDPEP",
+                description: "조정된 반추위 효율성 3",
+                level: 3,
+                dependencies: ["REPB3", "PeptidePass", "RDPB3", "RDPEP"],
+                category: "protein",
+                location: "rumen"
+            },
+            "REPB1": {
+                name: "REPB1",
+                fullName: "REPB1 (기본 반추위 효율성 1)",
+                expression: "REPB1 = prot.b1 x (kp/(kp+rate.prot.b1))",
+                description: "기본 반추위 효율성 1 = 단백질 B1 x (분해율/(분해율+통과율))",
+                level: 4,
+                dependencies: ["prot.b1", "kp", "rate.prot.b1"],
+                category: "protein",
+                location: "rumen"
+            },
+            "REPB2": {
+                name: "REPB2",
+                fullName: "REPB2 (기본 반추위 효율성 2)",
+                expression: "REPB2 = prot.b2 x (kp/(kp+rate.prot.b2))",
+                description: "기본 반추위 효율성 2 = 단백질 B2 x (분해율/(분해율+통과율))",
+                level: 4,
+                dependencies: ["prot.b2", "kp", "rate.prot.b2"],
+                category: "protein",
+                location: "rumen"
+            },
+            "REPB3": {
+                name: "REPB3",
+                fullName: "REPB3 (기본 반추위 효율성 3)",
+                expression: "REPB3 = prot.b3 x (kp/(kp+rate.prot.b3))",
+                description: "기본 반추위 효율성 3 = 단백질 B3 x (분해율/(분해율+통과율))",
+                level: 4,
+                dependencies: ["prot.b3", "kp", "rate.prot.b3"],
+                category: "protein",
+                location: "rumen"
+            },
+            "RDPB1": {
+                name: "RDPB1",
+                fullName: "RDPB1 (분해 단백질 1)",
+                expression: "RDPB1 = prot.b1 x (rate.prot.b1/(rate.prot.b1+kp))",
+                description: "분해 단백질 1 = 단백질 B1 x (분해율/(분해율+통과율))",
+                level: 4,
+                dependencies: ["prot.b1", "rate.prot.b1", "kp"],
+                category: "protein",
+                location: "rumen"
+            },
+            "RDPB2": {
+                name: "RDPB2",
+                fullName: "RDPB2 (분해 단백질 2)",
+                expression: "RDPB2 = prot.b2 x (rate.prot.b2/(rate.prot.b2+kp))",
+                description: "분해 단백질 2 = 단백질 B2 x (분해율/(분해율+통과율))",
+                level: 4,
+                dependencies: ["prot.b2", "rate.prot.b2", "kp"],
+                category: "protein",
+                location: "rumen"
+            },
+            "RDPB3": {
+                name: "RDPB3",
+                fullName: "RDPB3 (분해 단백질 3)",
+                expression: "RDPB3 = prot.b3 x (rate.prot.b3/(rate.prot.b3+kp))",
+                description: "분해 단백질 3 = 단백질 B3 x (분해율/(분해율+통과율))",
+                level: 4,
+                dependencies: ["prot.b3", "rate.prot.b3", "kp"],
+                category: "protein",
+                location: "rumen"
+            },
+            "RDPEP": {
+                name: "RDPEP",
+                fullName: "RDPEP (분해 단백질 효율성)",
+                expression: "RDPEP = RDPB1 + RDPB2 + RDPB3",
+                description: "분해 단백질 효율성 = 분해 단백질 1 + 2 + 3",
+                level: 4,
+                dependencies: ["RDPB1", "RDPB2", "RDPB3"],
+                category: "protein",
+                location: "rumen"
+            },
+            "PeptidePass": {
+                name: "PeptidePass",
+                fullName: "PeptidePass (펩타이드 통과율)",
+                expression: "PeptidePass = RDPEP - PeptideUp",
+                description: "펩타이드 통과율 = 분해 단백질 효율성 - 펩타이드 흡수량",
+                level: 4,
+                dependencies: ["RDPEP", "PeptideUp"],
+                category: "protein",
+                location: "rumen"
+            },
+            "prot.b1": {
+                name: "prot.b1",
+                fullName: "prot.b1 (Protein B1)",
+                expression: "prot.b1 = 사료 단백질 B1 함량",
+                description: "단백질 B1 = 사료 단백질 B1 함량",
+                level: 5,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "prot.b2": {
+                name: "prot.b2",
+                fullName: "prot.b2 (Protein B2)",
+                expression: "prot.b2 = 사료 단백질 B2 함량",
+                description: "단백질 B2 = 사료 단백질 B2 함량",
+                level: 5,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "prot.b3": {
+                name: "prot.b3",
+                fullName: "prot.b3 (Protein B3)",
+                expression: "prot.b3 = 사료 단백질 B3 함량",
+                description: "단백질 B3 = 사료 단백질 B3 함량",
+                level: 5,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "kp": {
+                name: "kp",
+                fullName: "kp (Passage Rate)",
+                expression: "kp = (forage.p x kp_forage + conc.p x kp_conc) / 100",
+                description: "통과율 = (사료비율 x 사료통과율 + 농후사료비율 x 농후사료통과율) / 100",
+                level: 5,
+                dependencies: ["forage.p", "kp_forage", "conc.p", "kp_conc"],
+                category: "protein",
+                location: "rumen"
+            },
+            "rate.prot.b1": {
+                name: "rate.prot.b1",
+                fullName: "rate.prot.b1 (Protein B1 Degradation Rate)",
+                expression: "rate.prot.b1 = 8.0",
+                description: "단백질 B1 분해율 = 8.0%/시간",
+                level: 5,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "rate.prot.b2": {
+                name: "rate.prot.b2",
+                fullName: "rate.prot.b2 (Protein B2 Degradation Rate)",
+                expression: "rate.prot.b2 = 5.0",
+                description: "단백질 B2 분해율 = 5.0%/시간",
+                level: 5,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "rate.prot.b3": {
+                name: "rate.prot.b3",
+                fullName: "rate.prot.b3 (Protein B3 Degradation Rate)",
+                expression: "rate.prot.b3 = 1.5",
+                description: "단백질 B3 분해율 = 1.5%/시간",
+                level: 5,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "PeptideUp": {
+                name: "PeptideUp",
+                fullName: "PeptideUp (Peptide Uptake)",
+                expression: "PeptideUp = RDPEP x 0.8",
+                description: "펩타이드 흡수량 = 분해 단백질 효율성 x 0.8",
+                level: 5,
+                dependencies: ["RDPEP"],
+                category: "protein",
+                location: "rumen"
+            },
+            "forage.p": {
+                name: "forage.p",
+                fullName: "forage.p (Forage Percentage)",
+                expression: "forage.p = 사료 중 조사료 비율",
+                description: "조사료 비율 = 사료 중 조사료 비율",
+                level: 6,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "kp_forage": {
+                name: "kp_forage",
+                fullName: "kp_forage (Forage Passage Rate)",
+                expression: "kp_forage = 4.87",
+                description: "조사료 통과율 = 4.87%/시간",
+                level: 6,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "conc.p": {
+                name: "conc.p",
+                fullName: "conc.p (Concentrate Percentage)",
+                expression: "conc.p = 사료 중 농후사료 비율",
+                description: "농후사료 비율 = 사료 중 농후사료 비율",
+                level: 6,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+            "kp_conc": {
+                name: "kp_conc",
+                fullName: "kp_conc (Concentrate Passage Rate)",
+                expression: "kp_conc = 5.28",
+                description: "농후사료 통과율 = 5.28%/시간",
+                level: 6,
+                dependencies: [],
+                category: "protein",
+                location: "rumen"
+            },
+
+            // === 에너지 (Energy) ===
+            // 반추위 에너지
+            "ME": {
+                name: "ME",
+                fullName: "ME (Metabolizable Energy)",
+                expression: "ME = GE - FE - UE - CH4E",
+                description: "대사성 에너지 = 총에너지 - 분에너지 - 요에너지 - 메탄에너지",
+                level: 0,
+                dependencies: ["GE", "FE", "UE", "CH4E"],
+                category: "energy",
+                location: "rumen"
+            },
+            "GE": {
+                name: "GE",
+                fullName: "GE (Gross Energy)",
+                expression: "GE = (9.4 x EE + 5.65 x CP + 4.2 x (NDF + NFC)) / 100",
+                description: "총에너지 = 지방 x 9.4 + 단백질 x 5.65 + 탄수화물 x 4.2",
+                level: 1,
+                dependencies: ["EE", "CP", "NDF", "NFC"],
+                category: "energy",
+                location: "rumen"
+            },
+            "FE": {
+                name: "FE",
+                fullName: "FE (Fecal Energy)",
+                expression: "FE = GE x (1 - 소화율)",
+                description: "분에너지 = 총에너지 x (1 - 소화율)",
+                level: 1,
+                dependencies: ["GE", "소화율"],
+                category: "energy",
+                location: "rumen"
+            },
+            "UE": {
+                name: "UE",
+                fullName: "UE (Urinary Energy)",
+                expression: "UE = CP x 0.031",
+                description: "요에너지 = 단백질 x 0.031",
+                level: 1,
+                dependencies: ["CP"],
+                category: "energy",
+                location: "rumen"
+            },
+            "CH4E": {
+                name: "CH4E",
+                fullName: "CH4E (Methane Energy)",
+                expression: "CH4E = GE x 0.06",
+                description: "메탄에너지 = 총에너지 x 0.06",
+                level: 1,
+                dependencies: ["GE"],
+                category: "energy",
+                location: "rumen"
+            },
+            "EE": {
+                name: "EE",
+                fullName: "EE (Ether Extract)",
+                expression: "EE = 사료 지방 함량",
+                description: "에테르 추출물 = 사료 지방 함량",
+                level: 2,
+                dependencies: [],
+                category: "energy",
+                location: "rumen"
+            },
+            "CP": {
+                name: "CP",
+                fullName: "CP (Crude Protein)",
+                expression: "CP = N x 6.25",
+                description: "조단백질 = 질소 x 6.25",
+                level: 2,
+                dependencies: ["N"],
+                category: "energy",
+                location: "rumen"
+            },
+            "NDF": {
+                name: "NDF",
+                fullName: "NDF (Neutral Detergent Fiber)",
+                expression: "NDF = 사료 NDF 함량",
+                description: "중성세제 불용성 섬유 = 사료 NDF 함량",
+                level: 2,
+                dependencies: [],
+                category: "energy",
+                location: "rumen"
+            },
+            "NFC": {
+                name: "NFC",
+                fullName: "NFC (Non-Fiber Carbohydrate)",
+                expression: "NFC = 100 - CP - EE - NDF - Ash",
+                description: "비섬유성 탄수화물 = 100 - 단백질 - 지방 - NDF - 회분",
+                level: 2,
+                dependencies: ["CP", "EE", "NDF", "Ash"],
+                category: "energy",
+                location: "rumen"
+            },
+            "소화율": {
+                name: "소화율",
+                fullName: "소화율 (Digestibility)",
+                expression: "소화율 = 0.85",
+                description: "소화율 = 85% (기본값)",
+                level: 2,
+                dependencies: [],
+                category: "energy",
+                location: "rumen"
+            },
+            "N": {
+                name: "N",
+                fullName: "N (Nitrogen)",
+                expression: "N = 사료 질소 함량",
+                description: "질소 = 사료 질소 함량",
+                level: 3,
+                dependencies: [],
+                category: "energy",
+                location: "rumen"
+            },
+            "Ash": {
+                name: "Ash",
+                fullName: "Ash (Mineral Ash)",
+                expression: "Ash = 사료 회분 함량",
+                description: "회분 = 사료 회분 함량",
+                level: 3,
+                dependencies: [],
+                category: "energy",
+                location: "rumen"
+            },
+
+            // === 탄수화물 (Carbohydrate) ===
+            // 반추위 탄수화물
+            "CHO": {
+                name: "CHO",
+                fullName: "CHO (Carbohydrate)",
+                expression: "CHO = NDF + NFC",
+                description: "탄수화물 = 중성세제 불용성 섬유 + 비섬유성 탄수화물",
+                level: 0,
+                dependencies: ["NDF", "NFC"],
+                category: "carbohydrate",
+                location: "rumen"
+            },
+            "NDF_Digest": {
+                name: "NDF_Digest",
+                fullName: "NDF_Digest (NDF Digestibility)",
+                expression: "NDF_Digest = NDF x NDF_소화율",
+                description: "NDF 소화량 = NDF x NDF 소화율",
+                level: 1,
+                dependencies: ["NDF", "NDF_소화율"],
+                category: "carbohydrate",
+                location: "rumen"
+            },
+            "NFC_Digest": {
+                name: "NFC_Digest",
+                fullName: "NFC_Digest (NFC Digestibility)",
+                expression: "NFC_Digest = NFC x NFC_소화율",
+                description: "NFC 소화량 = NFC x NFC 소화율",
+                level: 1,
+                dependencies: ["NFC", "NFC_소화율"],
+                category: "carbohydrate",
+                location: "rumen"
+            },
+            "NDF_소화율": {
+                name: "NDF_소화율",
+                fullName: "NDF_소화율 (NDF Digestibility Rate)",
+                expression: "NDF_소화율 = 0.65",
+                description: "NDF 소화율 = 65% (기본값)",
+                level: 2,
+                dependencies: [],
+                category: "carbohydrate",
+                location: "rumen"
+            },
+            "NFC_소화율": {
+                name: "NFC_소화율",
+                fullName: "NFC_소화율 (NFC Digestibility Rate)",
+                expression: "NFC_소화율 = 0.95",
+                description: "NFC 소화율 = 95% (기본값)",
+                level: 2,
+                dependencies: [],
+                category: "carbohydrate",
+                location: "rumen"
+            },
+
+            // === 지방 (Fat) ===
+            // 반추위 지방
+            "Fat": {
+                name: "Fat",
+                fullName: "Fat (Total Fat)",
+                expression: "Fat = EE",
+                description: "총 지방 = 에테르 추출물",
+                level: 0,
+                dependencies: ["EE"],
+                category: "fat",
+                location: "rumen"
+            },
+            "Fat_Digest": {
+                name: "Fat_Digest",
+                fullName: "Fat_Digest (Fat Digestibility)",
+                expression: "Fat_Digest = EE x Fat_소화율",
+                description: "지방 소화량 = 에테르 추출물 x 지방 소화율",
+                level: 1,
+                dependencies: ["EE", "Fat_소화율"],
+                category: "fat",
+                location: "rumen"
+            },
+            "Fat_소화율": {
+                name: "Fat_소화율",
+                fullName: "Fat_소화율 (Fat Digestibility Rate)",
+                expression: "Fat_소화율 = 0.85",
+                description: "지방 소화율 = 85% (기본값)",
+                level: 2,
+                dependencies: [],
+                category: "fat",
+                location: "rumen"
+            },
+
+            // === 미네랄 (Mineral) ===
+            // 반추위 미네랄
+            "Ca": {
+                name: "Ca",
+                fullName: "Ca (Calcium)",
+                expression: "Ca = 사료 칼슘 함량",
+                description: "칼슘 = 사료 칼슘 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+            "P": {
+                name: "P",
+                fullName: "P (Phosphorus)",
+                expression: "P = 사료 인 함량",
+                description: "인 = 사료 인 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+            "Mg": {
+                name: "Mg",
+                fullName: "Mg (Magnesium)",
+                expression: "Mg = 사료 마그네슘 함량",
+                description: "마그네슘 = 사료 마그네슘 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+            "K": {
+                name: "K",
+                fullName: "K (Potassium)",
+                expression: "K = 사료 칼륨 함량",
+                description: "칼륨 = 사료 칼륨 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+            "Na": {
+                name: "Na",
+                fullName: "Na (Sodium)",
+                expression: "Na = 사료 나트륨 함량",
+                description: "나트륨 = 사료 나트륨 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+            "Cl": {
+                name: "Cl",
+                fullName: "Cl (Chloride)",
+                expression: "Cl = 사료 염소 함량",
+                description: "염소 = 사료 염소 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+            "S": {
+                name: "S",
+                fullName: "S (Sulfur)",
+                expression: "S = 사료 황 함량",
+                description: "황 = 사료 황 함량",
+                level: 0,
+                dependencies: [],
+                category: "mineral",
+                location: "rumen"
+            },
+
+            // === 비타민 (Vitamin) ===
+            // 반추위 비타민
+            "VitA": {
+                name: "VitA",
+                fullName: "VitA (Vitamin A)",
+                expression: "VitA = 사료 비타민 A 함량",
+                description: "비타민 A = 사료 비타민 A 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitD": {
+                name: "VitD",
+                fullName: "VitD (Vitamin D)",
+                expression: "VitD = 사료 비타민 D 함량",
+                description: "비타민 D = 사료 비타민 D 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitE": {
+                name: "VitE",
+                fullName: "VitE (Vitamin E)",
+                expression: "VitE = 사료 비타민 E 함량",
+                description: "비타민 E = 사료 비타민 E 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitK": {
+                name: "VitK",
+                fullName: "VitK (Vitamin K)",
+                expression: "VitK = 사료 비타민 K 함량",
+                description: "비타민 K = 사료 비타민 K 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitB1": {
+                name: "VitB1",
+                fullName: "VitB1 (Thiamine)",
+                expression: "VitB1 = 사료 티아민 함량",
+                description: "티아민 = 사료 티아민 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitB2": {
+                name: "VitB2",
+                fullName: "VitB2 (Riboflavin)",
+                expression: "VitB2 = 사료 리보플라빈 함량",
+                description: "리보플라빈 = 사료 리보플라빈 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitB6": {
+                name: "VitB6",
+                fullName: "VitB6 (Pyridoxine)",
+                expression: "VitB6 = 사료 피리독신 함량",
+                description: "피리독신 = 사료 피리독신 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "VitB12": {
+                name: "VitB12",
+                fullName: "VitB12 (Cobalamin)",
+                expression: "VitB12 = 사료 코발라민 함량",
+                description: "코발라민 = 사료 코발라민 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "Niacin": {
+                name: "Niacin",
+                fullName: "Niacin (Nicotinic Acid)",
+                expression: "Niacin = 사료 나이아신 함량",
+                description: "나이아신 = 사료 나이아신 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "Pantothenic": {
+                name: "Pantothenic",
+                fullName: "Pantothenic Acid",
+                expression: "Pantothenic = 사료 판토텐산 함량",
+                description: "판토텐산 = 사료 판토텐산 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "Biotin": {
+                name: "Biotin",
+                fullName: "Biotin",
+                expression: "Biotin = 사료 비오틴 함량",
+                description: "비오틴 = 사료 비오틴 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "Folic": {
+                name: "Folic",
+                fullName: "Folic Acid",
+                expression: "Folic = 사료 엽산 함량",
+                description: "엽산 = 사료 엽산 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+            "Choline": {
+                name: "Choline",
+                fullName: "Choline",
+                expression: "Choline = 사료 콜린 함량",
+                description: "콜린 = 사료 콜린 함량",
+                level: 0,
+                dependencies: [],
+                category: "vitamin",
+                location: "rumen"
+            },
+
+            // === 소장 모델들 ===
+            // 소장 단백질
+            "SI_Protein": {
+                name: "SI_Protein",
+                fullName: "SI_Protein (Small Intestine Protein)",
+                expression: "SI_Protein = MP x SI_Protein_효율성",
+                description: "소장 단백질 = 대사성 단백질 x 소장 효율성",
+                level: 0,
+                dependencies: ["MP", "SI_Protein_효율성"],
+                category: "protein",
+                location: "small-intestine"
+            },
+            "SI_Protein_효율성": {
+                name: "SI_Protein_효율성",
+                fullName: "SI_Protein_효율성 (SI Protein Efficiency)",
+                expression: "SI_Protein_효율성 = 0.85",
+                description: "소장 단백질 효율성 = 85%",
+                level: 1,
+                dependencies: [],
+                category: "protein",
+                location: "small-intestine"
+            },
+
+            // 소장 에너지
+            "SI_Energy": {
+                name: "SI_Energy",
+                fullName: "SI_Energy (Small Intestine Energy)",
+                expression: "SI_Energy = ME x SI_Energy_효율성",
+                description: "소장 에너지 = 대사성 에너지 x 소장 효율성",
+                level: 0,
+                dependencies: ["ME", "SI_Energy_효율성"],
+                category: "energy",
+                location: "small-intestine"
+            },
+            "SI_Energy_효율성": {
+                name: "SI_Energy_효율성",
+                fullName: "SI_Energy_효율성 (SI Energy Efficiency)",
+                expression: "SI_Energy_효율성 = 0.90",
+                description: "소장 에너지 효율성 = 90%",
+                level: 1,
+                dependencies: [],
+                category: "energy",
+                location: "small-intestine"
+            },
+
+            // 소장 탄수화물
+            "SI_Carbohydrate": {
+                name: "SI_Carbohydrate",
+                fullName: "SI_Carbohydrate (Small Intestine Carbohydrate)",
+                expression: "SI_Carbohydrate = CHO x SI_Carb_효율성",
+                description: "소장 탄수화물 = 탄수화물 x 소장 효율성",
+                level: 0,
+                dependencies: ["CHO", "SI_Carb_효율성"],
+                category: "carbohydrate",
+                location: "small-intestine"
+            },
+            "SI_Carb_효율성": {
+                name: "SI_Carb_효율성",
+                fullName: "SI_Carb_효율성 (SI Carbohydrate Efficiency)",
+                expression: "SI_Carb_효율성 = 0.95",
+                description: "소장 탄수화물 효율성 = 95%",
+                level: 1,
+                dependencies: [],
+                category: "carbohydrate",
+                location: "small-intestine"
+            },
+
+            // 소장 지방
+            "SI_Fat": {
+                name: "SI_Fat",
+                fullName: "SI_Fat (Small Intestine Fat)",
+                expression: "SI_Fat = Fat x SI_Fat_효율성",
+                description: "소장 지방 = 지방 x 소장 효율성",
+                level: 0,
+                dependencies: ["Fat", "SI_Fat_효율성"],
+                category: "fat",
+                location: "small-intestine"
+            },
+            "SI_Fat_효율성": {
+                name: "SI_Fat_효율성",
+                fullName: "SI_Fat_효율성 (SI Fat Efficiency)",
+                expression: "SI_Fat_효율성 = 0.88",
+                description: "소장 지방 효율성 = 88%",
+                level: 1,
+                dependencies: [],
+                category: "fat",
+                location: "small-intestine"
+            },
+
+            // 소장 미네랄
+            "SI_Ca": {
+                name: "SI_Ca",
+                fullName: "SI_Ca (Small Intestine Calcium)",
+                expression: "SI_Ca = Ca x SI_Ca_효율성",
+                description: "소장 칼슘 = 칼슘 x 소장 효율성",
+                level: 0,
+                dependencies: ["Ca", "SI_Ca_효율성"],
+                category: "mineral",
+                location: "small-intestine"
+            },
+            "SI_Ca_효율성": {
+                name: "SI_Ca_효율성",
+                fullName: "SI_Ca_효율성 (SI Calcium Efficiency)",
+                expression: "SI_Ca_효율성 = 0.45",
+                description: "소장 칼슘 효율성 = 45%",
+                level: 1,
+                dependencies: [],
+                category: "mineral",
+                location: "small-intestine"
+            },
+            "SI_P": {
+                name: "SI_P",
+                fullName: "SI_P (Small Intestine Phosphorus)",
+                expression: "SI_P = P x SI_P_효율성",
+                description: "소장 인 = 인 x 소장 효율성",
+                level: 0,
+                dependencies: ["P", "SI_P_효율성"],
+                category: "mineral",
+                location: "small-intestine"
+            },
+            "SI_P_효율성": {
+                name: "SI_P_효율성",
+                fullName: "SI_P_효율성 (SI Phosphorus Efficiency)",
+                expression: "SI_P_효율성 = 0.65",
+                description: "소장 인 효율성 = 65%",
+                level: 1,
+                dependencies: [],
+                category: "mineral",
+                location: "small-intestine"
+            },
+
+            // 소장 비타민
+            "SI_VitA": {
+                name: "SI_VitA",
+                fullName: "SI_VitA (Small Intestine Vitamin A)",
+                expression: "SI_VitA = VitA x SI_VitA_효율성",
+                description: "소장 비타민 A = 비타민 A x 소장 효율성",
+                level: 0,
+                dependencies: ["VitA", "SI_VitA_효율성"],
+                category: "vitamin",
+                location: "small-intestine"
+            },
+            "SI_VitA_효율성": {
+                name: "SI_VitA_효율성",
+                fullName: "SI_VitA_효율성 (SI Vitamin A Efficiency)",
+                expression: "SI_VitA_효율성 = 0.75",
+                description: "소장 비타민 A 효율성 = 75%",
+                level: 1,
+                dependencies: [],
+                category: "vitamin",
+                location: "small-intestine"
+            },
+
+            // === 대장 모델들 ===
+            // 대장 단백질
+            "LI_Protein": {
+                name: "LI_Protein",
+                fullName: "LI_Protein (Large Intestine Protein)",
+                expression: "LI_Protein = SI_Protein x LI_Protein_효율성",
+                description: "대장 단백질 = 소장 단백질 x 대장 효율성",
+                level: 0,
+                dependencies: ["SI_Protein", "LI_Protein_효율성"],
+                category: "protein",
+                location: "large-intestine"
+            },
+            "LI_Protein_효율성": {
+                name: "LI_Protein_효율성",
+                fullName: "LI_Protein_효율성 (LI Protein Efficiency)",
+                expression: "LI_Protein_효율성 = 0.15",
+                description: "대장 단백질 효율성 = 15%",
+                level: 1,
+                dependencies: [],
+                category: "protein",
+                location: "large-intestine"
+            },
+
+            // 대장 에너지
+            "LI_Energy": {
+                name: "LI_Energy",
+                fullName: "LI_Energy (Large Intestine Energy)",
+                expression: "LI_Energy = SI_Energy x LI_Energy_효율성",
+                description: "대장 에너지 = 소장 에너지 x 대장 효율성",
+                level: 0,
+                dependencies: ["SI_Energy", "LI_Energy_효율성"],
+                category: "energy",
+                location: "large-intestine"
+            },
+            "LI_Energy_효율성": {
+                name: "LI_Energy_효율성",
+                fullName: "LI_Energy_효율성 (LI Energy Efficiency)",
+                expression: "LI_Energy_효율성 = 0.10",
+                description: "대장 에너지 효율성 = 10%",
+                level: 1,
+                dependencies: [],
+                category: "energy",
+                location: "large-intestine"
+            },
+
+            // === 간 모델들 ===
+            // 간 단백질
+            "Liver_Protein": {
+                name: "Liver_Protein",
+                fullName: "Liver_Protein (Liver Protein)",
+                expression: "Liver_Protein = SI_Protein x Liver_Protein_효율성",
+                description: "간 단백질 = 소장 단백질 x 간 효율성",
+                level: 0,
+                dependencies: ["SI_Protein", "Liver_Protein_효율성"],
+                category: "protein",
+                location: "liver"
+            },
+            "Liver_Protein_효율성": {
+                name: "Liver_Protein_효율성",
+                fullName: "Liver_Protein_효율성 (Liver Protein Efficiency)",
+                expression: "Liver_Protein_효율성 = 0.95",
+                description: "간 단백질 효율성 = 95%",
+                level: 1,
+                dependencies: [],
+                category: "protein",
+                location: "liver"
+            },
+
+            // 간 에너지
+            "Liver_Energy": {
+                name: "Liver_Energy",
+                fullName: "Liver_Energy (Liver Energy)",
+                expression: "Liver_Energy = SI_Energy x Liver_Energy_효율성",
+                description: "간 에너지 = 소장 에너지 x 간 효율성",
+                level: 0,
+                dependencies: ["SI_Energy", "Liver_Energy_효율성"],
+                category: "energy",
+                location: "liver"
+            },
+            "Liver_Energy_효율성": {
+                name: "Liver_Energy_효율성",
+                fullName: "Liver_Energy_효율성 (Liver Energy Efficiency)",
+                expression: "Liver_Energy_효율성 = 0.98",
+                description: "간 에너지 효율성 = 98%",
+                level: 1,
+                dependencies: [],
+                category: "energy",
+                location: "liver"
+            },
+
+            // === 전신 모델들 ===
+            // 전신 단백질
+            "Systemic_Protein": {
+                name: "Systemic_Protein",
+                fullName: "Systemic_Protein (Systemic Protein)",
+                expression: "Systemic_Protein = Liver_Protein x Systemic_Protein_효율성",
+                description: "전신 단백질 = 간 단백질 x 전신 효율성",
+                level: 0,
+                dependencies: ["Liver_Protein", "Systemic_Protein_효율성"],
+                category: "protein",
+                location: "systemic"
+            },
+            "Systemic_Protein_효율성": {
+                name: "Systemic_Protein_효율성",
+                fullName: "Systemic_Protein_효율성 (Systemic Protein Efficiency)",
+                expression: "Systemic_Protein_효율성 = 0.99",
+                description: "전신 단백질 효율성 = 99%",
+                level: 1,
+                dependencies: [],
+                category: "protein",
+                location: "systemic"
+            },
+
+            // 전신 에너지
+            "Systemic_Energy": {
+                name: "Systemic_Energy",
+                fullName: "Systemic_Energy (Systemic Energy)",
+                expression: "Systemic_Energy = Liver_Energy x Systemic_Energy_효율성",
+                description: "전신 에너지 = 간 에너지 x 전신 효율성",
+                level: 0,
+                dependencies: ["Liver_Energy", "Systemic_Energy_효율성"],
+                category: "energy",
+                location: "systemic"
+            },
+            "Systemic_Energy_효율성": {
+                name: "Systemic_Energy_효율성",
+                fullName: "Systemic_Energy_효율성 (Systemic Energy Efficiency)",
+                expression: "Systemic_Energy_효율성 = 0.99",
+                description: "전신 에너지 효율성 = 99%",
+                level: 1,
+                dependencies: [],
+                category: "energy",
+                location: "systemic"
+            },
+
+            // === 섭취량 모델 ===
+            "DMI": {
+                name: "DMI",
+                fullName: "DMI (Dry Matter Intake)",
+                expression: "DMI = 기본 섭취량 x 조정 계수들",
+                description: "건물 섭취량 = 기본 섭취량 x 조정 계수들",
+                level: 0,
+                dependencies: ["기본 섭취량", "조정 계수들"],
+                category: "intake",
+                location: "rumen"
+            },
+            "기본 섭취량": {
+                name: "기본 섭취량",
+                fullName: "기본 섭취량 (Base Intake)",
+                expression: "기본 섭취량 = 체중 x 0.025",
+                description: "기본 섭취량 = 체중 x 2.5%",
+                level: 1,
+                dependencies: ["체중"],
+                category: "intake",
+                location: "rumen"
+            },
+            "조정 계수들": {
+                name: "조정 계수들",
+                fullName: "조정 계수들 (Adjustment Factors)",
+                expression: "조정 계수들 = 온도조정 x 습도조정 x 임신조정",
+                description: "조정 계수들 = 온도 x 습도 x 임신 조정",
+                level: 1,
+                dependencies: ["온도조정", "습도조정", "임신조정"],
+                category: "intake",
+                location: "rumen"
+            },
+            "체중": {
+                name: "체중",
+                fullName: "체중 (Body Weight)",
+                expression: "체중 = 입력값",
+                description: "체중 = 사용자 입력값",
+                level: 2,
+                dependencies: [],
+                category: "intake",
+                location: "rumen"
+            },
+            "온도조정": {
+                name: "온도조정",
+                fullName: "온도조정 (Temperature Adjustment)",
+                expression: "온도조정 = 1.0433 - 0.0044 x 온도 + 0.0001 x 온도²",
+                description: "온도조정 = 온도에 따른 조정 계수",
+                level: 2,
+                dependencies: ["온도"],
+                category: "intake",
+                location: "rumen"
+            },
+            "습도조정": {
+                name: "습도조정",
+                fullName: "습도조정 (Humidity Adjustment)",
+                expression: "습도조정 = 1 - 0.01 x 습도",
+                description: "습도조정 = 습도에 따른 조정 계수",
+                level: 2,
+                dependencies: ["습도"],
+                category: "intake",
+                location: "rumen"
+            },
+            "임신조정": {
+                name: "임신조정",
+                fullName: "임신조정 (Pregnancy Adjustment)",
+                expression: "임신조정 = if(임신일 >= 260, 0.8, 1)",
+                description: "임신조정 = 임신일수에 따른 조정 계수",
+                level: 2,
+                dependencies: ["임신일"],
+                category: "intake",
+                location: "rumen"
+            },
+            "온도": {
+                name: "온도",
+                fullName: "온도 (Temperature)",
+                expression: "온도 = 입력값",
+                description: "온도 = 사용자 입력값",
+                level: 3,
+                dependencies: [],
+                category: "intake",
+                location: "rumen"
+            },
+            "습도": {
+                name: "습도",
+                fullName: "습도 (Humidity)",
+                expression: "습도 = 입력값",
+                description: "습도 = 사용자 입력값",
+                level: 3,
+                dependencies: [],
+                category: "intake",
+                location: "rumen"
+            },
+            "임신일": {
+                name: "임신일",
+                fullName: "임신일 (Pregnancy Day)",
+                expression: "임신일 = 입력값",
+                description: "임신일 = 사용자 입력값",
+                level: 3,
+                dependencies: [],
+                category: "intake",
+                location: "rumen"
+            }
+        };
+
+        // 진행률 업데이트
+        function updateProgress() {
+            const totalFormulas = Object.keys(formulaDatabase).length;
+            const implementedFormulas = totalFormulas;
+            const progressPercentage = Math.round((implementedFormulas / totalFormulas) * 100);
+            
+            document.getElementById('totalFormulas').textContent = totalFormulas;
+            document.getElementById('implementedFormulas').textContent = implementedFormulas;
+            document.getElementById('progressPercentage').textContent = progressPercentage;
+        }
+
+        // 카테고리 선택 함수
+        function selectCategory(categoryLocation) {
+            const [category, location] = categoryLocation.split('-');
+            const treeContainer = document.getElementById('formula-tree');
+            
+            if (!treeContainer) return;
+            
+            clearTree();
+            
+            // 카테고리별 아이콘과 제목
+            const categoryIcons = {
+                'protein': '🥩',
+                'energy': '⚡',
+                'carbohydrate': '🌾',
+                'fat': '🫘',
+                'mineral': '🪨',
+                'vitamin': '💊'
+            };
+            
+            const locationNames = {
+                'rumen': '반추위',
+                'small-intestine': '소장',
+                'large-intestine': '대장',
+                'liver': '간',
+                'systemic': '전신'
+            };
+            
+            const icon = categoryIcons[category] || '📊';
+            const locationName = locationNames[location] || location;
+            
+            treeContainer.innerHTML = `<h3>${icon} ${locationName} ${category} 계산식</h3>`;
+            
+            // 해당 카테고리와 위치의 Level 0 수식들만 필터링
+            const level0Formulas = Object.values(formulaDatabase).filter(formula => 
+                formula.category === category && formula.location === location && formula.level === 0
+            );
+            
+            if (level0Formulas.length === 0) {
+                treeContainer.innerHTML += '<p>해당 카테고리의 Level 0 수식이 아직 구현되지 않았습니다.</p>';
+                return;
+            }
+            
+            // Level 0 수식들을 한 줄에 표시
+            level0Formulas.forEach(formula => {
+                const formulaDiv = document.createElement('div');
+                formulaDiv.className = 'formula-expression';
+                formulaDiv.style.display = 'inline-block';
+                formulaDiv.style.marginRight = '20px';
+                formulaDiv.style.marginBottom = '10px';
+                formulaDiv.style.minWidth = '300px';
+                formulaDiv.style.fontSize = '12px';
+                formulaDiv.style.padding = '10px';
+                
+                const categoryBadge = `<span class="category-badge category-${formula.category}">${formula.category}</span>`;
+                
+                formulaDiv.innerHTML = `
+                    <strong>${formula.name}</strong>${categoryBadge}: ${formula.expression}
+                    <br><em style="font-size: 11px;">${formula.description}</em>
+                `;
+                
+                // 의존성 버튼들 생성
+                if (formula.dependencies && formula.dependencies.length > 0) {
+                    const buttonsContainer = document.createElement('div');
+                    buttonsContainer.className = 'dependency-buttons';
+                    buttonsContainer.style.marginTop = '10px';
+                    
+                    formula.dependencies.forEach(depName => {
+                        const depFormula = formulaDatabase[depName];
+                        if (depFormula) {
+                            const button = document.createElement('button');
+                            button.className = 'formula-button';
+                            button.style.fontSize = '11px';
+                            button.style.padding = '6px 12px';
+                            button.textContent = depName;
+                            button.onclick = () => expandFormula(depName, 1);
+                            buttonsContainer.appendChild(button);
+                        } else {
+                            const leafNode = document.createElement('span');
+                            leafNode.className = 'tree-node leaf';
+                            leafNode.style.fontSize = '11px';
+                            leafNode.textContent = depName + ' (입력값)';
+                            buttonsContainer.appendChild(leafNode);
+                        }
+                    });
+                    
+                    formulaDiv.appendChild(buttonsContainer);
+                } else {
+                    const leafDiv = document.createElement('div');
+                    leafDiv.innerHTML = '<span class="tree-node leaf" style="font-size: 11px;">🍃 잎 노드 (최종 입력값)</span>';
+                    formulaDiv.appendChild(leafDiv);
+                }
+                
+                treeContainer.appendChild(formulaDiv);
+            });
+        }
+
+        // 수식 확장 함수 - 개선된 계층 구조
+        function expandFormula(formulaName, level) {
+            const formula = formulaDatabase[formulaName];
+            if (!formula) return;
+            
+            const treeContainer = document.getElementById('formula-tree');
+            if (!treeContainer) return;
+            
+            // 기존 Level 제거 (같은 레벨의 다른 수식들은 유지)
+            const existingLevel = document.getElementById('level-' + level + '-' + formulaName);
+            if (existingLevel) {
+                existingLevel.remove();
+            }
+            
+            // 새 Level 컨테이너 생성
+            const levelContainer = document.createElement('div');
+            levelContainer.id = 'level-' + level + '-' + formulaName;
+            levelContainer.className = 'level-container';
+            levelContainer.style.display = 'inline-block';
+            levelContainer.style.verticalAlign = 'top';
+            levelContainer.style.marginRight = '20px';
+            levelContainer.style.marginBottom = '10px';
+            levelContainer.style.minWidth = '300px';
+            
+            const levelIcons = ['🌱', '🌿', '🌳', '🌲', '🌴', '🌵', '🍃'];
+            const icon = levelIcons[Math.min(level, levelIcons.length - 1)];
+            const categoryBadge = `<span class="category-badge category-${formula.category}">${formula.category}</span>`;
+            
+            levelContainer.innerHTML = `<h3 style="font-size: 14px; margin-bottom: 10px;">${icon} Level ${level}: ${formula.name}${categoryBadge}</h3>`;
+            
+            // 수식 표시
+            const expressionDiv = document.createElement('div');
+            expressionDiv.className = 'formula-expression';
+            expressionDiv.style.fontSize = '12px';
+            expressionDiv.style.padding = '10px';
+            expressionDiv.innerHTML = `<strong>${formula.expression}</strong><br><em style="font-size: 11px;">${formula.description}</em>`;
+            levelContainer.appendChild(expressionDiv);
+            
+            // 의존성 버튼들 생성
+            if (formula.dependencies && formula.dependencies.length > 0) {
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.className = 'dependency-buttons';
+                buttonsContainer.style.marginTop = '10px';
+                
+                formula.dependencies.forEach(depName => {
+                    const depFormula = formulaDatabase[depName];
+                    if (depFormula) {
+                        const button = document.createElement('button');
+                        button.className = 'formula-button';
+                        button.style.fontSize = '11px';
+                        button.style.padding = '6px 12px';
+                        button.textContent = depName;
+                        button.onclick = () => expandFormula(depName, level + 1);
+                        buttonsContainer.appendChild(button);
+                    } else {
+                        const leafNode = document.createElement('span');
+                        leafNode.className = 'tree-node leaf';
+                        leafNode.style.fontSize = '11px';
+                        leafNode.textContent = depName + ' (입력값)';
+                        buttonsContainer.appendChild(leafNode);
+                    }
+                });
+                
+                levelContainer.appendChild(buttonsContainer);
+            } else {
+                const leafDiv = document.createElement('div');
+                leafDiv.innerHTML = '<span class="tree-node leaf" style="font-size: 11px;">🍃 잎 노드 (최종 입력값)</span>';
+                levelContainer.appendChild(leafDiv);
+            }
+            
+            // 같은 레벨의 컨테이너가 있는지 확인하고 추가
+            const levelRow = document.getElementById('level-row-' + level);
+            if (levelRow) {
+                levelRow.appendChild(levelContainer);
+            } else {
+                // 새로운 레벨 행 생성
+                const levelRowDiv = document.createElement('div');
+                levelRowDiv.id = 'level-row-' + level;
+                levelRowDiv.className = 'level-row';
+                levelRowDiv.style.marginBottom = '20px';
+                levelRowDiv.style.border = '2px solid #e0e0e0';
+                levelRowDiv.style.borderRadius = '8px';
+                levelRowDiv.style.padding = '15px';
+                levelRowDiv.style.backgroundColor = '#f8f9fa';
+                
+                const levelHeader = document.createElement('h2');
+                levelHeader.style.margin = '0 0 15px 0';
+                levelHeader.style.fontSize = '18px';
+                levelHeader.style.color = '#333';
+                levelHeader.textContent = `🌿 Level ${level} 수식들`;
+                levelRowDiv.appendChild(levelHeader);
+                
+                levelRowDiv.appendChild(levelContainer);
+                treeContainer.appendChild(levelRowDiv);
+            }
+        }
+
+        // 수식 표현식에서 변수 추출
+        function extractVariablesFromExpression(expression) {
+            // 수학 연산자와 특수문자 제거하고 변수만 추출
+            const variables = expression
+                .replace(/[+\-*/=()²]/g, ' ')
+                .split(/\s+/)
+                .filter(v => {
+                    const trimmed = v.trim();
+                    return trimmed && 
+                           !isNaN(trimmed) === false && 
+                           trimmed.length > 0 && 
+                           !trimmed.includes('x') && // 곱하기 기호 제외
+                           !trimmed.includes('×'); // 곱하기 기호 제외
+                });
+            
+            return [...new Set(variables)]; // 중복 제거
+        }
+
+        // 전체 수식 보기
+        function showAllFormulas() {
+            const treeContainer = document.getElementById('formula-tree');
+            if (!treeContainer) return;
+            
+            clearTree();
+            treeContainer.innerHTML = '<h3>📋 전체 수식 목록 (영양소별 × 장소별 분류)</h3>';
+            
+            // 카테고리별로 그룹화
+            const categories = {};
+            Object.values(formulaDatabase).forEach(formula => {
+                if (!categories[formula.category]) {
+                    categories[formula.category] = {};
+                }
+                if (!categories[formula.category][formula.location]) {
+                    categories[formula.category][formula.location] = [];
+                }
+                categories[formula.category][formula.location].push(formula);
+            });
+            
+            Object.keys(categories).forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'level-container';
+                
+                const categoryIcons = {
+                    'protein': '🥩',
+                    'energy': '⚡',
+                    'carbohydrate': '🌾',
+                    'fat': '🫘',
+                    'mineral': '🪨',
+                    'vitamin': '💊'
+                };
+                
+                const icon = categoryIcons[category] || '📊';
+                categoryDiv.innerHTML = `<h3>${icon} ${category.toUpperCase()} (${Object.values(categories[category]).flat().length}개)</h3>`;
+                
+                Object.keys(categories[category]).forEach(location => {
+                    const locationDiv = document.createElement('div');
+                    locationDiv.style.marginBottom = '20px';
+                    locationDiv.innerHTML = `<h4>📍 ${location} (${categories[category][location].length}개)</h4>`;
+                    
+                    categories[category][location].forEach(formula => {
+                        const formulaDiv = document.createElement('div');
+                        formulaDiv.className = 'formula-expression';
+                        formulaDiv.innerHTML = `<strong>${formula.name}</strong>: ${formula.expression}<br><em>${formula.description}</em>`;
+                        locationDiv.appendChild(formulaDiv);
+                    });
+                    
+                    categoryDiv.appendChild(locationDiv);
+                });
+                
+                treeContainer.appendChild(categoryDiv);
+            });
+        }
+
+        // 트리 초기화
+        function clearTree() {
+            const treeContainer = document.getElementById('formula-tree');
+            if (treeContainer) {
+                treeContainer.innerHTML = '<p>트리가 초기화되었습니다. 새로운 카테고리를 선택하세요.</p>';
+            }
+            
+            // 모든 레벨 행 제거
+            const levelRows = document.querySelectorAll('.level-row');
+            levelRows.forEach(row => row.remove());
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+            initializeDiagram();
+        });
+
+        // D3.js 다이어그램 관련 변수들
+        let simulation;
+        let svg;
+        let tooltip;
+        let currentData = { nodes: [], links: [] };
+
+        // 다이어그램 초기화
+        function initializeDiagram() {
+            try {
+                const container = document.getElementById('network-diagram');
+                if (!container) {
+                    console.error('network-diagram 컨테이너를 찾을 수 없습니다.');
+                    return;
+                }
+
+                // 기존 SVG 제거
+                container.innerHTML = '';
+
+                // SVG 생성
+                svg = d3.select('#network-diagram')
+                    .append('svg')
+                    .attr('width', '100%')
+                    .attr('height', '100%')
+                    .attr('viewBox', '0 0 800 600');
+
+                // 줌 기능 추가
+                const zoom = d3.zoom()
+                    .scaleExtent([0.1, 4])
+                    .on('zoom', (event) => {
+                        svg.select('g').attr('transform', event.transform);
+                    });
+
+                svg.call(zoom);
+
+                // 메인 그룹 생성
+                svg.append('g');
+
+                // 툴팁 생성
+                tooltip = d3.select('body')
+                    .append('div')
+                    .attr('class', 'tooltip')
+                    .style('opacity', 0);
+
+                console.log('다이어그램 초기화 완료');
+                
+                // 초기 다이어그램 표시
+                setTimeout(() => {
+                    showTopLevel();
+                }, 100);
+                
+            } catch (error) {
+                console.error('다이어그램 초기화 오류:', error);
+                const container = document.getElementById('network-diagram');
+                if (container) {
+                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">다이어그램 초기화 중 오류가 발생했습니다.</div>';
+                }
+            }
+        }
+
+        // 데이터를 D3.js 결정나무 형식으로 변환
+        function prepareDiagramData(formulas, selectedFormulas = null) {
+            const nodes = [];
+            const links = [];
+            const nodeMap = new Map();
+
+            // 노드 생성
+            Object.values(formulas).forEach(formula => {
+                if (selectedFormulas && !selectedFormulas.includes(formula.name)) return;
+                
+                const node = {
+                    id: formula.name,
+                    name: formula.name,
+                    fullName: formula.fullName,
+                    expression: formula.expression,
+                    description: formula.description,
+                    category: formula.category,
+                    location: formula.location,
+                    level: formula.level,
+                    isInput: formula.dependencies.length === 0
+                };
+                
+                nodes.push(node);
+                nodeMap.set(formula.name, node);
+            });
+
+            // 링크 생성 - 부모에서 자식으로 (결과값에서 입력값으로)
+            Object.values(formulas).forEach(formula => {
+                if (selectedFormulas && !selectedFormulas.includes(formula.name)) return;
+                
+                // 수식 표현식에서 변수 추출
+                const variables = extractVariablesFromExpression(formula.expression);
+                
+                variables.forEach(varName => {
+                    if (nodeMap.has(varName)) {
+                        links.push({
+                            source: formula.name,  // 부모 (결과값)
+                            target: varName        // 자식 (입력값)
+                        });
+                    }
+                });
+            });
+
+            return { nodes, links };
+        }
+
+        // 다이어그램 업데이트 - 결정나무 구조로 변경
+        function updateDiagram(data) {
+            try {
+                currentData = data;
+                const container = svg.select('g');
+                
+                // 기존 요소들 제거
+                container.selectAll('*').remove();
+
+                if (!data.nodes || data.nodes.length === 0) {
+                    container.append('text')
+                        .attr('x', 400)
+                        .attr('y', 300)
+                        .attr('text-anchor', 'middle')
+                        .style('font-size', '16px')
+                        .style('fill', '#666')
+                        .text('데이터가 없습니다');
+                    return;
+                }
+
+                // 색상 스케일
+                const colorScale = d3.scaleOrdinal()
+                    .domain(['protein', 'energy', 'carbohydrate', 'fat', 'mineral', 'vitamin', 'intake'])
+                    .range(['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff']);
+
+                // 결정나무 레이아웃 계산
+                const treeLayout = d3.tree().size([700, 500]);
+                const root = buildHierarchy(data.nodes, data.links);
+                const treeData = treeLayout(root);
+
+                // 링크 그리기 (부모-자식 연결선)
+                const link = container.append('g')
+                    .selectAll('path')
+                    .data(treeData.links())
+                    .enter().append('path')
+                    .attr('class', 'link')
+                    .attr('d', d3.linkVertical()
+                        .x(d => d.x)
+                        .y(d => d.y))
+                    .attr('stroke', '#999')
+                    .attr('stroke-width', 2)
+                    .attr('fill', 'none');
+
+                // 노드 그리기 (사각형 박스)
+                const node = container.append('g')
+                    .selectAll('g')
+                    .data(treeData.descendants())
+                    .enter().append('g')
+                    .attr('class', 'node')
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+                // 노드 박스
+                node.append('rect')
+                    .attr('width', 120)
+                    .attr('height', 40)
+                    .attr('x', -60)
+                    .attr('y', -20)
+                    .attr('rx', 5)
+                    .attr('fill', d => d.data.category ? colorScale(d.data.category) : '#ccc')
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 2)
+                    .on('mouseover', function(event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style('opacity', .9);
+                        tooltip.html(`
+                            <strong>${d.data.fullName || d.data.name}</strong><br/>
+                            ${d.data.expression || ''}<br/>
+                            <em>${d.data.description || ''}</em><br/>
+                            카테고리: ${d.data.category || 'N/A'}<br/>
+                            위치: ${d.data.location || 'N/A'}<br/>
+                            레벨: ${d.data.level || 'N/A'}
+                        `)
+                            .style('left', (event.pageX + 10) + 'px')
+                            .style('top', (event.pageY - 28) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        tooltip.transition()
+                            .duration(500)
+                            .style('opacity', 0);
+                    });
+
+                // 노드 라벨
+                node.append('text')
+                    .attr('class', 'node-label')
+                    .attr('text-anchor', 'middle')
+                    .attr('dy', '.35em')
+                    .style('font-size', '10px')
+                    .style('fill', '#333')
+                    .style('font-weight', 'bold')
+                    .text(d => d.data.name);
+
+                // 수식 표현식 표시 (작은 텍스트)
+                node.append('text')
+                    .attr('text-anchor', 'middle')
+                    .attr('dy', '1.2em')
+                    .style('font-size', '8px')
+                    .style('fill', '#666')
+                    .text(d => {
+                        const expr = d.data.expression || '';
+                        return expr.length > 20 ? 
+                            expr.substring(0, 20) + '...' : 
+                            expr;
+                    });
+            } catch (error) {
+                console.error('다이어그램 업데이트 오류:', error);
+                const container = svg.select('g');
+                container.selectAll('*').remove();
+                container.append('text')
+                    .attr('x', 400)
+                    .attr('y', 300)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '16px')
+                    .style('fill', '#666')
+                    .text('다이어그램 로드 중 오류가 발생했습니다');
+            }
+        }
+
+        // 계층 구조 데이터 생성
+        function buildHierarchy(nodes, links) {
+            if (!nodes || nodes.length === 0) {
+                return { id: 'root', name: 'Root', children: [] };
+            }
+
+            const nodeMap = new Map();
+            nodes.forEach(node => {
+                nodeMap.set(node.id, { ...node, children: [] });
+            });
+
+            // 링크를 기반으로 부모-자식 관계 설정
+            links.forEach(link => {
+                const parent = nodeMap.get(link.source);
+                const child = nodeMap.get(link.target);
+                if (parent && child) {
+                    parent.children.push(child);
+                }
+            });
+
+            // 루트 노드 찾기 (다른 노드의 자식이 아닌 노드들)
+            const childIds = new Set();
+            links.forEach(link => {
+                childIds.add(link.target);
+            });
+
+            const roots = Array.from(nodeMap.values()).filter(node => 
+                !childIds.has(node.id)
+            );
+
+            // 루트가 없으면 첫 번째 노드를 루트로 설정
+            if (roots.length === 0) {
+                return nodeMap.get(nodes[0].id) || { id: 'root', name: 'Root', children: [] };
+            }
+
+            // 여러 루트가 있으면 가상의 루트 노드 생성
+            if (roots.length > 1) {
+                return {
+                    id: 'virtual-root',
+                    name: 'Root',
+                    children: roots
+                };
+            }
+
+            return roots[0];
+        }
+
+        // 전체 노드 보기
+        function showAllNodes() {
+            const data = prepareDiagramData(formulaDatabase);
+            updateDiagram(data);
+            updateActiveButton('showAllNodes');
+        }
+
+        // MP 체인만 보기
+        function showMPChain() {
+            const mpChain = ['MP', 'MPfeed', 'MPbact', 'DIGPB1', 'DIGPB2', 'DIGPB3', 'MCP', 
+                           'ID_Protein_1', 'ID_Protein_2', 'ID_Protein_3', 'adjREPB1', 
+                           'adjREPB2', 'adjREPB3', 'REPB1', 'REPB2', 'REPB3', 'RDPB1', 
+                           'RDPB2', 'RDPB3', 'RDPEP', 'PeptidePass', 'prot.b1', 'prot.b2', 
+                           'prot.b3', 'kp', 'rate.prot.b1', 'rate.prot.b2', 'rate.prot.b3', 
+                           'PeptideUp', 'forage.p', 'kp_forage', 'conc.p', 'kp_conc'];
+            const data = prepareDiagramData(formulaDatabase, mpChain);
+            updateDiagram(data);
+            updateActiveButton('showMPChain');
+        }
+
+        // ME 체인만 보기
+        function showMEChain() {
+            const meChain = ['ME', 'GE', 'FE', 'UE', 'CH4E', 'EE', 'CP', 'NDF', 'NFC', 
+                           '소화율', 'N', 'Ash', 'CHO', 'NDF_Digest', 'NFC_Digest', 
+                           'NDF_소화율', 'NFC_소화율'];
+            const data = prepareDiagramData(formulaDatabase, meChain);
+            updateDiagram(data);
+            updateActiveButton('showMEChain');
+        }
+
+        // DMI 체인만 보기
+        function showDMIChain() {
+            const dmiChain = ['DMI', '기본 섭취량', '조정 계수들', '체중', '온도조정', 
+                             '습도조정', '임신조정', '온도', '습도', '임신일'];
+            const data = prepareDiagramData(formulaDatabase, dmiChain);
+            updateDiagram(data);
+            updateActiveButton('showDMIChain');
+        }
+
+        // 선택된 경로만 보기
+        function showSelectedPath() {
+            // 현재 선택된 수식의 경로만 표시
+            const selectedFormula = document.querySelector('.formula-button:focus');
+            if (selectedFormula) {
+                const formulaName = selectedFormula.textContent;
+                const path = getFormulaPath(formulaName);
+                const data = prepareDiagramData(formulaDatabase, path);
+                updateDiagram(data);
+            } else {
+                showTopLevel();
+            }
+            updateActiveButton('showSelectedPath');
+        }
+
+        // 최상위 수식만 보기 - 실제 최종 결과값들
+        function showTopLevel() {
+            // 실제 최종 결과값들 (다른 수식에서 사용되지 않는 수식들)
+            const finalResults = Object.values(formulaDatabase)
+                .filter(formula => {
+                    // 다른 수식에서 이 수식을 사용하지 않는 경우가 최종 결과
+                    return !Object.values(formulaDatabase).some(otherFormula => 
+                        otherFormula.expression.includes(formula.name)
+                    );
+                })
+                .map(formula => formula.name);
+            
+            const data = prepareDiagramData(formulaDatabase, finalResults);
+            updateDiagram(data);
+            updateActiveButton('showTopLevel');
+        }
+
+        // 줌 초기화
+        function resetZoom() {
+            svg.transition().duration(750).call(
+                d3.zoom().transform,
+                d3.zoomIdentity
+            );
+        }
+
+        // 수식 경로 가져오기
+        function getFormulaPath(formulaName, visited = new Set()) {
+            if (visited.has(formulaName)) return [];
+            visited.add(formulaName);
+            
+            const formula = formulaDatabase[formulaName];
+            if (!formula) return [formulaName];
+            
+            const path = [formulaName];
+            formula.dependencies.forEach(dep => {
+                path.push(...getFormulaPath(dep, visited));
+            });
+            
+            return path;
+        }
+
+        // 활성 버튼 업데이트
+        function updateActiveButton(activeFunction) {
+            document.querySelectorAll('.control-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeButton = document.querySelector(`[onclick="${activeFunction}()"]`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

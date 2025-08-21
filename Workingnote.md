@@ -1,0 +1,1 @@
+다이아그램은 계산식 구조.pptx 파일의 내용 처럼 그림이 나와야 해, 이렇게 되면 MP= MPfeed + MPbact 이고, MPfeed = DIGPB1 + DIGPB2 + DIGPB3이고. DIGPB1 = ID_Protein_1 * adjREPB1이고, adjREPB1 = REPB1 + PeptidePass*RDPB1/RDPEP 이고 그런식으로 계속 되는 공식을 마자믹까지 추적해서 볼 수 있도록 해줘야 해.  그리고, 그 것들을 엑셀로 옮겨야지.   

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 계층적 계산식 추적기</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 120px;
+        }
+
+        .control-group select, .control-group input {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .control-group button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-group button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .hierarchy-container {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .hierarchy-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-item h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .info-item p {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #hierarchy-graph {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .zoom-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .zoom-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .formula-details {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .formula-details h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .formula-tree {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 20px;
+        }
+
+        .formula-tree h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .formula-node {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .formula-node:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .formula-node.selected {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .formula-name {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .formula-expression {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .formula-description {
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 CNUCNM 계층적 계산식 추적기</h1>
+            <p>MP → MPfeed → DIGPB1 → adjREPB1 → REPB1 계층적 의존성 추적 및 시각화</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>시작 변수:</label>
+                <select id="start-variable">
+                    <option value="MP">MP (Metabolizable Protein)</option>
+                    <option value="ME">ME (Metabolizable Energy)</option>
+                    <option value="DMI">DMI (Dry Matter Intake)</option>
+                    <option value="FHP">FHP (Fasting Heat Production)</option>
+                    <option value="Growth_Energy">Growth Energy</option>
+                    <option value="Lactation_Energy">Lactation Energy</option>
+                </select>
+
+                <label>추적 깊이:</label>
+                <select id="trace-depth">
+                    <option value="3">3단계</option>
+                    <option value="5" selected>5단계</option>
+                    <option value="7">7단계</option>
+                    <option value="10">10단계</option>
+                </select>
+
+                <button onclick="traceFormula()">🔍 추적 시작</button>
+                <button onclick="resetView()">🔄 초기화</button>
+            </div>
+
+            <div class="control-group">
+                <label>내보내기:</label>
+                <button class="export-btn" onclick="exportToExcel()">📊 Excel 추출</button>
+                <button class="export-btn" onclick="exportToCSV()">📄 CSV 추출</button>
+                <button class="export-btn" onclick="exportFormulaTree()">🌳 수식 트리</button>
+            </div>
+        </div>
+
+        <div class="hierarchy-container">
+            <div class="hierarchy-info">
+                <div class="info-item">
+                    <h4>총 변수 수</h4>
+                    <p id="total-variables">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>계층 레벨</h4>
+                    <p id="hierarchy-levels">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>선택된 변수</h4>
+                    <p id="selected-variable">없음</p>
+                </div>
+                <div class="info-item">
+                    <h4>추적 경로</h4>
+                    <p id="trace-path">없음</p>
+                </div>
+            </div>
+
+            <div id="hierarchy-graph">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                    <button class="zoom-btn" onclick="zoomOut()">-</button>
+                    <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+                    <button class="zoom-btn" onclick="fitToScreen()">⤢</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="formula-details">
+            <h3>📋 계층적 수식 트리</h3>
+            <div id="formula-tree-container">
+                <div class="formula-tree">
+                    <h4>MP (Metabolizable Protein) 계층</h4>
+                    <div class="formula-node" onclick="selectNode('MP')">
+                        <div class="formula-name">MP</div>
+                        <div class="formula-expression">MP = MPfeed + MPbact</div>
+                        <div class="formula-description">대사성 단백질 = 사료 단백질 + 미생물 단백질</div>
+                    </div>
+                    <div class="formula-node" onclick="selectNode('MPfeed')">
+                        <div class="formula-name">MPfeed</div>
+                        <div class="formula-expression">MPfeed = DIGPB1 + DIGPB2 + DIGPB3</div>
+                        <div class="formula-description">사료 단백질 = 소화 가능 단백질 1 + 2 + 3</div>
+                    </div>
+                    <div class="formula-node" onclick="selectNode('MPbact')">
+                        <div class="formula-name">MPbact</div>
+                        <div class="formula-expression">MPbact = MCP × 0.64</div>
+                        <div class="formula-description">미생물 단백질 = 미생물 조단백질 × 효율성</div>
+                    </div>
+                </div>
+
+                <div class="formula-tree">
+                    <h4>DIGPB (소화 가능 단백질) 계층</h4>
+                    <div class="formula-node" onclick="selectNode('DIGPB1')">
+                        <div class="formula-name">DIGPB1</div>
+                        <div class="formula-expression">DIGPB1 = ID_Protein_1 × adjREPB1</div>
+                        <div class="formula-description">소화 가능 단백질 1 = 소장 단백질 1 × 조정된 반추위 효율성 1</div>
+                    </div>
+                    <div class="formula-node" onclick="selectNode('DIGPB2')">
+                        <div class="formula-name">DIGPB2</div>
+                        <div class="formula-expression">DIGPB2 = ID_Protein_2 × adjREPB2</div>
+                        <div class="formula-description">소화 가능 단백질 2 = 소장 단백질 2 × 조정된 반추위 효율성 2</div>
+                    </div>
+                    <div class="formula-node" onclick="selectNode('DIGPB3')">
+                        <div class="formula-name">DIGPB3</div>
+                        <div class="formula-expression">DIGPB3 = ID_Protein_3 × adjREPB3</div>
+                        <div class="formula-description">소화 가능 단백질 3 = 소장 단백질 3 × 조정된 반추위 효율성 3</div>
+                    </div>
+                </div>
+
+                <div class="formula-tree">
+                    <h4>adjREPB (조정된 반추위 효율성) 계층</h4>
+                    <div class="formula-node" onclick="selectNode('adjREPB1')">
+                        <div class="formula-name">adjREPB1</div>
+                        <div class="formula-expression">adjREPB1 = REPB1 + PeptidePass × RDPB1 / RDPEP</div>
+                        <div class="formula-description">조정된 반추위 효율성 1 = 기본 효율성 + 펩타이드 통과율 × 반추위 분해 단백질 / 반추위 분해 효율성</div>
+                    </div>
+                    <div class="formula-node" onclick="selectNode('adjREPB2')">
+                        <div class="formula-name">adjREPB2</div>
+                        <div class="formula-expression">adjREPB2 = REPB2 + PeptidePass × RDPB2 / RDPEP</div>
+                        <div class="formula-description">조정된 반추위 효율성 2</div>
+                    </div>
+                    <div class="formula-node" onclick="selectNode('adjREPB3')">
+                        <div class="formula-name">adjREPB3</div>
+                        <div class="formula-expression">adjREPB3 = REPB3 + PeptidePass × RDPB3 / RDPEP</div>
+                        <div class="formula-description">조정된 반추위 효율성 3</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>계층 구조 생성 중...</h3>
+        <p>계산식 의존성을 분석하고 있습니다.</p>
+    </div>
+
+    <script>
+        // 전역 변수
+        let hierarchyData = {
+            nodes: [],
+            links: []
+        };
+        let svg, g, simulation, node, link, label;
+        let currentTracePath = [];
+
+        // 색상 맵
+        const colorMap = {
+            "MP": "#FF6B6B",
+            "MPfeed": "#4ECDC4", 
+            "MPbact": "#45B7D1",
+            "DIGPB": "#96CEB4",
+            "adjREPB": "#FFEAA7",
+            "REPB": "#DDA0DD",
+            "ID_Protein": "#98D8C8",
+            "MCP": "#F7DC6F",
+            "PeptidePass": "#BB8FCE",
+            "RDPB": "#85C1E9",
+            "RDPEP": "#F8C471"
+        };
+
+        // 계층적 수식 데이터 생성
+        function generateHierarchicalFormulaData() {
+            const nodes = [];
+            const links = [];
+            let nodeId = 0;
+
+            // MP 계층 구조
+            const mpHierarchy = {
+                "MP": {
+                    formula: "MP = MPfeed + MPbact",
+                    description: "대사성 단백질",
+                    level: 0,
+                    dependencies: ["MPfeed", "MPbact"]
+                },
+                "MPfeed": {
+                    formula: "MPfeed = DIGPB1 + DIGPB2 + DIGPB3",
+                    description: "사료 단백질",
+                    level: 1,
+                    dependencies: ["DIGPB1", "DIGPB2", "DIGPB3"]
+                },
+                "MPbact": {
+                    formula: "MPbact = MCP × 0.64",
+                    description: "미생물 단백질",
+                    level: 1,
+                    dependencies: ["MCP"]
+                },
+                "DIGPB1": {
+                    formula: "DIGPB1 = ID_Protein_1 × adjREPB1",
+                    description: "소화 가능 단백질 1",
+                    level: 2,
+                    dependencies: ["ID_Protein_1", "adjREPB1"]
+                },
+                "DIGPB2": {
+                    formula: "DIGPB2 = ID_Protein_2 × adjREPB2",
+                    description: "소화 가능 단백질 2",
+                    level: 2,
+                    dependencies: ["ID_Protein_2", "adjREPB2"]
+                },
+                "DIGPB3": {
+                    formula: "DIGPB3 = ID_Protein_3 × adjREPB3",
+                    description: "소화 가능 단백질 3",
+                    level: 2,
+                    dependencies: ["ID_Protein_3", "adjREPB3"]
+                },
+                "adjREPB1": {
+                    formula: "adjREPB1 = REPB1 + PeptidePass × RDPB1 / RDPEP",
+                    description: "조정된 반추위 효율성 1",
+                    level: 3,
+                    dependencies: ["REPB1", "PeptidePass", "RDPB1", "RDPEP"]
+                },
+                "adjREPB2": {
+                    formula: "adjREPB2 = REPB2 + PeptidePass × RDPB2 / RDPEP",
+                    description: "조정된 반추위 효율성 2",
+                    level: 3,
+                    dependencies: ["REPB2", "PeptidePass", "RDPB2", "RDPEP"]
+                },
+                "adjREPB3": {
+                    formula: "adjREPB3 = REPB3 + PeptidePass × RDPB3 / RDPEP",
+                    description: "조정된 반추위 효율성 3",
+                    level: 3,
+                    dependencies: ["REPB3", "PeptidePass", "RDPB3", "RDPEP"]
+                },
+                "REPB1": {
+                    formula: "REPB1 = 기본 반추위 효율성 계수",
+                    description: "기본 반추위 효율성 1",
+                    level: 4,
+                    dependencies: []
+                },
+                "REPB2": {
+                    formula: "REPB2 = 기본 반추위 효율성 계수",
+                    description: "기본 반추위 효율성 2",
+                    level: 4,
+                    dependencies: []
+                },
+                "REPB3": {
+                    formula: "REPB3 = 기본 반추위 효율성 계수",
+                    description: "기본 반추위 효율성 3",
+                    level: 4,
+                    dependencies: []
+                },
+                "ID_Protein_1": {
+                    formula: "ID_Protein_1 = 소장 도달 단백질 1",
+                    description: "소장 도달 단백질 1",
+                    level: 4,
+                    dependencies: []
+                },
+                "ID_Protein_2": {
+                    formula: "ID_Protein_2 = 소장 도달 단백질 2",
+                    description: "소장 도달 단백질 2",
+                    level: 4,
+                    dependencies: []
+                },
+                "ID_Protein_3": {
+                    formula: "ID_Protein_3 = 소장 도달 단백질 3",
+                    description: "소장 도달 단백질 3",
+                    level: 4,
+                    dependencies: []
+                },
+                "MCP": {
+                    formula: "MCP = Available_energy × MCP_efficiency",
+                    description: "미생물 조단백질",
+                    level: 2,
+                    dependencies: ["Available_energy", "MCP_efficiency"]
+                },
+                "PeptidePass": {
+                    formula: "PeptidePass = 펩타이드 통과율",
+                    description: "펩타이드 통과율",
+                    level: 4,
+                    dependencies: []
+                },
+                "RDPB1": {
+                    formula: "RDPB1 = 반추위 분해 단백질 1",
+                    description: "반추위 분해 단백질 1",
+                    level: 4,
+                    dependencies: []
+                },
+                "RDPB2": {
+                    formula: "RDPB2 = 반추위 분해 단백질 2",
+                    description: "반추위 분해 단백질 2",
+                    level: 4,
+                    dependencies: []
+                },
+                "RDPB3": {
+                    formula: "RDPB3 = 반추위 분해 단백질 3",
+                    description: "반추위 분해 단백질 3",
+                    level: 4,
+                    dependencies: []
+                },
+                "RDPEP": {
+                    formula: "RDPEP = 반추위 분해 효율성",
+                    description: "반추위 분해 효율성",
+                    level: 4,
+                    dependencies: []
+                },
+                "Available_energy": {
+                    formula: "Available_energy = 발효 가능 에너지",
+                    description: "발효 가능 에너지",
+                    level: 3,
+                    dependencies: []
+                },
+                "MCP_efficiency": {
+                    formula: "MCP_efficiency = 미생물 효율성",
+                    description: "미생물 효율성",
+                    level: 3,
+                    dependencies: []
+                }
+            };
+
+            // 노드 생성
+            Object.entries(mpHierarchy).forEach(([name, data]) => {
+                nodes.push({
+                    id: nodeId++,
+                    name: name,
+                    formula: data.formula,
+                    description: data.description,
+                    level: data.level,
+                    category: getCategoryFromName(name),
+                    size: Math.max(8, 15 - data.level * 2)
+                });
+            });
+
+            // 링크 생성
+            Object.entries(mpHierarchy).forEach(([name, data]) => {
+                const sourceNode = nodes.find(n => n.name === name);
+                if (sourceNode && data.dependencies.length > 0) {
+                    data.dependencies.forEach(dep => {
+                        const targetNode = nodes.find(n => n.name === dep);
+                        if (targetNode) {
+                            links.push({
+                                source: sourceNode.id,
+                                target: targetNode.id,
+                                strength: 1
+                            });
+                        }
+                    });
+                }
+            });
+
+            return { nodes, links };
+        }
+
+        // 이름으로 카테고리 결정
+        function getCategoryFromName(name) {
+            if (name.startsWith("MP")) return "MP";
+            if (name.startsWith("DIGPB")) return "DIGPB";
+            if (name.startsWith("adjREPB")) return "adjREPB";
+            if (name.startsWith("REPB")) return "REPB";
+            if (name.startsWith("ID_Protein")) return "ID_Protein";
+            if (name.startsWith("RDPB")) return "RDPB";
+            if (name === "MCP") return "MCP";
+            if (name === "PeptidePass") return "PeptidePass";
+            if (name === "RDPEP") return "RDPEP";
+            if (name === "Available_energy") return "Available_energy";
+            if (name === "MCP_efficiency") return "MCP_efficiency";
+            return "OTHER";
+        }
+
+        // 계층 구조 초기화
+        function initializeHierarchy() {
+            const width = document.getElementById('hierarchy-graph').clientWidth;
+            const height = document.getElementById('hierarchy-graph').clientHeight;
+
+            svg = d3.select("#hierarchy-graph")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            g = svg.append("g");
+
+            // 줌 기능
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+
+            // 시뮬레이션 설정
+            simulation = d3.forceSimulation()
+                .force("link", d3.forceLink().id(d => d.id).distance(80))
+                .force("charge", d3.forceManyBody().strength(-500))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(d => d.size + 10))
+                .force("x", d3.forceX().x(d => d.level * 150 + 100).strength(0.3));
+
+            // 데이터 로드
+            hierarchyData = generateHierarchicalFormulaData();
+            
+            // 링크 그리기
+            link = g.append("g")
+                .selectAll("line")
+                .data(hierarchyData.links)
+                .enter().append("line")
+                .attr("class", "link")
+                .style("stroke", "#999")
+                .style("stroke-opacity", 0.6)
+                .style("stroke-width", d => d.strength * 2);
+
+            // 노드 그리기
+            node = g.append("g")
+                .selectAll("circle")
+                .data(hierarchyData.nodes)
+                .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", d => d.size)
+                .style("fill", d => colorMap[d.category] || "#ccc")
+                .style("stroke", "#fff")
+                .style("stroke-width", 2)
+                .call(drag(simulation));
+
+            // 노드 라벨
+            label = g.append("g")
+                .selectAll("text")
+                .data(hierarchyData.nodes)
+                .enter().append("text")
+                .text(d => d.name)
+                .attr("text-anchor", "middle")
+                .attr("dy", ".35em")
+                .style("font-size", "10px")
+                .style("fill", "#333")
+                .style("pointer-events", "none");
+
+            // 툴팁
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+            // 노드 이벤트
+            node.on("mouseover", function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                
+                let tooltipContent = `<strong>${d.name}</strong><br/>`;
+                tooltipContent += `수식: ${d.formula}<br/>`;
+                tooltipContent += `설명: ${d.description}<br/>`;
+                tooltipContent += `레벨: ${d.level}<br/>`;
+                tooltipContent += `카테고리: ${d.category}`;
+
+                tooltip.html(tooltipContent)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+                
+                // 연결된 링크 하이라이트
+                link.style("stroke-opacity", l => 
+                    l.source.id === d.id || l.target.id === d.id ? 1 : 0.1
+                );
+            })
+            .on("mouseout", function() {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+                link.style("stroke-opacity", 0.6);
+            })
+            .on("click", function(event, d) {
+                selectNode(d.name);
+            });
+
+            // 시뮬레이션 업데이트
+            simulation.nodes(hierarchyData.nodes);
+            simulation.force("link").links(hierarchyData.links);
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+
+                label
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            });
+
+            updateStats();
+        }
+
+        // 드래그 기능
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+
+        // 줌 컨트롤 함수들
+        function zoomIn() {
+            svg.transition().duration(300).call(
+                d3.zoom().scaleBy, 1.5
+            );
+        }
+
+        function zoomOut() {
+            svg.transition().duration(300).call(
+                d3.zoom().scaleBy, 1 / 1.5
+            );
+        }
+
+        function resetZoom() {
+            svg.transition().duration(300).call(
+                d3.zoom().transform, d3.zoomIdentity
+            );
+        }
+
+        function fitToScreen() {
+            const bounds = g.node().getBBox();
+            const fullWidth = document.getElementById('hierarchy-graph').clientWidth;
+            const fullHeight = document.getElementById('hierarchy-graph').clientHeight;
+            const width = bounds.width;
+            const height = bounds.height;
+            const midX = bounds.x + width / 2;
+            const midY = bounds.y + height / 2;
+            
+            if (width == 0 || height == 0) return;
+            
+            const scale = 0.9 / Math.max(width / fullWidth, height / fullHeight);
+            const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+            
+            svg.transition().duration(300).call(
+                d3.zoom().transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+            );
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            document.getElementById('total-variables').textContent = hierarchyData.nodes.length;
+            document.getElementById('hierarchy-levels').textContent = Math.max(...hierarchyData.nodes.map(n => n.level)) + 1;
+        }
+
+        // 수식 추적
+        function traceFormula() {
+            const startVar = document.getElementById('start-variable').value;
+            const depth = parseInt(document.getElementById('trace-depth').value);
+            
+            document.getElementById('loading').style.display = 'block';
+            
+            setTimeout(() => {
+                currentTracePath = traceFormulaPath(startVar, depth);
+                highlightTracePath(currentTracePath);
+                document.getElementById('selected-variable').textContent = startVar;
+                document.getElementById('trace-path').textContent = currentTracePath.join(' → ');
+                document.getElementById('loading').style.display = 'none';
+            }, 1000);
+        }
+
+        // 수식 경로 추적
+        function traceFormulaPath(startVar, depth) {
+            const path = [startVar];
+            const visited = new Set([startVar]);
+            
+            function traceRecursive(varName, currentDepth) {
+                if (currentDepth >= depth) return;
+                
+                const node = hierarchyData.nodes.find(n => n.name === varName);
+                if (!node) return;
+                
+                const dependencies = hierarchyData.links
+                    .filter(l => l.source.name === varName)
+                    .map(l => l.target.name);
+                
+                for (const dep of dependencies) {
+                    if (!visited.has(dep)) {
+                        visited.add(dep);
+                        path.push(dep);
+                        traceRecursive(dep, currentDepth + 1);
+                    }
+                }
+            }
+            
+            traceRecursive(startVar, 0);
+            return path;
+        }
+
+        // 추적 경로 하이라이트
+        function highlightTracePath(path) {
+            node.style("opacity", d => path.includes(d.name) ? 1 : 0.3);
+            link.style("stroke-opacity", d => {
+                const sourceName = d.source.name || hierarchyData.nodes.find(n => n.id === d.source).name;
+                const targetName = d.target.name || hierarchyData.nodes.find(n => n.id === d.target).name;
+                return path.includes(sourceName) && path.includes(targetName) ? 0.8 : 0.1;
+            });
+        }
+
+        // 노드 선택
+        function selectNode(nodeName) {
+            document.getElementById('selected-variable').textContent = nodeName;
+            
+            // 수식 트리에서 선택 표시
+            document.querySelectorAll('.formula-node').forEach(node => {
+                node.classList.remove('selected');
+            });
+            
+            const selectedNode = document.querySelector(`[onclick="selectNode('${nodeName}')"]`);
+            if (selectedNode) {
+                selectedNode.classList.add('selected');
+            }
+        }
+
+        // 뷰 초기화
+        function resetView() {
+            simulation.alpha(1).restart();
+            node.style("opacity", 1);
+            link.style("stroke-opacity", 0.6);
+            document.getElementById('selected-variable').textContent = '없음';
+            document.getElementById('trace-path').textContent = '없음';
+            currentTracePath = [];
+            
+            document.querySelectorAll('.formula-node').forEach(node => {
+                node.classList.remove('selected');
+            });
+        }
+
+        // Excel 추출 기능
+        function exportToExcel() {
+            const workbook = XLSX.utils.book_new();
+            
+            // 계층 구조 시트
+            const hierarchySheet = hierarchyData.nodes.map(node => ({
+                '변수명': node.name,
+                '수식': node.formula,
+                '설명': node.description,
+                '레벨': node.level,
+                '카테고리': node.category,
+                '노드크기': node.size
+            }));
+            
+            const hierarchyWS = XLSX.utils.json_to_sheet(hierarchySheet);
+            XLSX.utils.book_append_sheet(workbook, hierarchyWS, "계층구조");
+            
+            // 연결 관계 시트
+            const linkSheet = hierarchyData.links.map(link => {
+                const sourceNode = hierarchyData.nodes.find(n => n.id === link.source);
+                const targetNode = hierarchyData.nodes.find(n => n.id === link.target);
+                return {
+                    '출발변수': sourceNode ? sourceNode.name : link.source,
+                    '도착변수': targetNode ? targetNode.name : link.target,
+                    '출발레벨': sourceNode ? sourceNode.level : '',
+                    '도착레벨': targetNode ? targetNode.level : '',
+                    '연결강도': link.strength
+                };
+            });
+            
+            const linkWS = XLSX.utils.json_to_sheet(linkSheet);
+            XLSX.utils.book_append_sheet(workbook, linkWS, "연결관계");
+            
+            // 추적 경로 시트
+            const traceSheet = currentTracePath.map((varName, index) => ({
+                '순서': index + 1,
+                '변수명': varName,
+                '레벨': hierarchyData.nodes.find(n => n.name === varName)?.level || 0
+            }));
+            
+            const traceWS = XLSX.utils.json_to_sheet(traceSheet);
+            XLSX.utils.book_append_sheet(workbook, traceWS, "추적경로");
+            
+            // 파일 다운로드
+            XLSX.writeFile(workbook, 'CNUCNM_Hierarchical_Formula_Trace.xlsx');
+        }
+
+        // CSV 추출 기능
+        function exportToCSV() {
+            // 계층 구조 CSV
+            const hierarchyCSV = hierarchyData.nodes.map(node => 
+                `${node.name},${node.formula},${node.description},${node.level},${node.category},${node.size}`
+            ).join('\n');
+            
+            const hierarchyBlob = new Blob(['변수명,수식,설명,레벨,카테고리,노드크기\n' + hierarchyCSV], { type: 'text/csv' });
+            const hierarchyUrl = URL.createObjectURL(hierarchyBlob);
+            const hierarchyLink = document.createElement('a');
+            hierarchyLink.href = hierarchyUrl;
+            hierarchyLink.download = 'CNUCNM_Hierarchy.csv';
+            hierarchyLink.click();
+            
+            // 추적 경로 CSV
+            const traceCSV = currentTracePath.map((varName, index) => 
+                `${index + 1},${varName},${hierarchyData.nodes.find(n => n.name === varName)?.level || 0}`
+            ).join('\n');
+            
+            const traceBlob = new Blob(['순서,변수명,레벨\n' + traceCSV], { type: 'text/csv' });
+            const traceUrl = URL.createObjectURL(traceBlob);
+            const traceLink = document.createElement('a');
+            traceLink.href = traceUrl;
+            traceLink.download = 'CNUCNM_Trace_Path.csv';
+            traceLink.click();
+        }
+
+        // 수식 트리 내보내기
+        function exportFormulaTree() {
+            const treeData = hierarchyData.nodes
+                .sort((a, b) => a.level - b.level)
+                .map(node => `${'  '.repeat(node.level)}${node.name}: ${node.formula}`)
+                .join('\n');
+            
+            const blob = new Blob([treeData], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'CNUCNM_Formula_Tree.txt';
+            link.click();
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            document.getElementById('loading').style.display = 'block';
+            
+            setTimeout(() => {
+                initializeHierarchy();
+                document.getElementById('loading').style.display = 'none';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

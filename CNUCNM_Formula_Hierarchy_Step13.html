@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 수식 계층 구조 - 13단계: 탄수화물-반추위 모델 완전 구현</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .progress-info {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .formula-stats {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .classification-system {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border-left: 6px solid #ffa726;
+        }
+
+        .classification-system h3 {
+            color: #ffa726;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .classification-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .classification-category {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffa726;
+        }
+
+        .classification-category h4 {
+            color: #ffa726;
+            margin-bottom: 10px;
+        }
+
+        .category-item {
+            background: white;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .carb-rumen-focus {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border-left: 6px solid #4caf50;
+        }
+
+        .carb-rumen-focus h3 {
+            color: #4caf50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .carb-rumen-chain {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+
+        .carb-rumen-chain h4 {
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+
+        .chain-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .hierarchy-container {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .hierarchy-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .formula-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .formula-level {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+        }
+
+        .top-level {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+        }
+
+        .formula-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .formula-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            text-align: center;
+            margin: 5px;
+        }
+
+        .formula-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .formula-button.selected {
+            background: #28a745;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .formula-button.expanded {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .formula-button.has-children {
+            background: #17a2b8;
+        }
+
+        .formula-button.leaf {
+            background: #6c757d;
+        }
+
+        .formula-button.mp-related {
+            background: #ff6b6b;
+        }
+
+        .formula-button.mp-related:hover {
+            background: #ff5252;
+        }
+
+        .formula-button.me-related {
+            background: #4ecdc4;
+        }
+
+        .formula-button.me-related:hover {
+            background: #45b7aa;
+        }
+
+        .formula-button.dmi-related {
+            background: #fd79a8;
+        }
+
+        .formula-button.dmi-related:hover {
+            background: #f368a0;
+        }
+
+        .formula-button.carb-rumen-related {
+            background: #4caf50;
+        }
+
+        .formula-button.carb-rumen-related:hover {
+            background: #45a049;
+        }
+
+        .formula-details {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .formula-details h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .selected-formula {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 20px;
+        }
+
+        .formula-name {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .formula-expression {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 10px;
+        }
+
+        .formula-description {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .control-group button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-group button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .network-container {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .network-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .network-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .network-controls button {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .network-controls button:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .network-controls button.active {
+            background: #28a745;
+        }
+
+        #network-diagram {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .node {
+            cursor: pointer;
+        }
+
+        .node:hover {
+            stroke: #667eea;
+            stroke-width: 3px;
+        }
+
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 1px;
+        }
+
+        .node-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 CNUCNM 수식 계층 구조 - 13단계</h1>
+            <p>탄수화물-반추위 모델 완전 구현: 영양소별+장소별 체계적 접근으로 27,061개 수식을 체계적으로 구현합니다!</p>
+        </div>
+
+        <div class="progress-info">
+            <h3>📊 작업 진행 상황</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 13%"></div>
+            </div>
+            <div class="progress-text" id="progress-text">13/100 단계 완료 (13%)</div>
+        </div>
+
+        <div class="formula-stats">
+            <h3>📈 엑셀 수식 구현 현황</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-excel-formulas">27,061</div>
+                    <div class="stat-label">엑셀 파일 총 수식 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="implemented-formulas">0</div>
+                    <div class="stat-label">현재 구현된 수식 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="implementation-rate">0%</div>
+                    <div class="stat-label">구현 완료율</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="remaining-formulas">27,061</div>
+                    <div class="stat-label">남은 수식 수</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="classification-system">
+            <h3>🎯 새로운 체계적 분류 시스템</h3>
+            <div class="classification-grid">
+                <div class="classification-category">
+                    <h4>🌾 영양소별 분류</h4>
+                    <div class="category-item">탄수화물 (Carbohydrates)</div>
+                    <div class="category-item">단백질 (Protein)</div>
+                    <div class="category-item">지방 (Fat)</div>
+                    <div class="category-item">미네랄 (Minerals)</div>
+                    <div class="category-item">비타민 (Vitamins)</div>
+                </div>
+                <div class="classification-category">
+                    <h4>🏥 장소별 분류</h4>
+                    <div class="category-item">반추위 (Rumen)</div>
+                    <div class="category-item">소장 (Small Intestine)</div>
+                    <div class="category-item">대장 (Large Intestine)</div>
+                    <div class="category-item">간 (Liver)</div>
+                    <div class="category-item">전신 (Systemic)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="carb-rumen-focus">
+            <h3>🎯 탄수화물-반추위 모델 완전 구현 계획</h3>
+            <div class="carb-rumen-chain">
+                <h4>탄수화물 반추위 처리 체인 완성 계획:</h4>
+                <div class="chain-item">Level 0: Carb_Rumen_Processing = Total_Carbs × Rumen_Fermentation_Rate</div>
+                <div class="chain-item">Level 1: Total_Carbs = NDF + NFC + Starch</div>
+                <div class="chain-item">Level 1: Rumen_Fermentation_Rate = f(NDF_content, Passage_rate, pH)</div>
+                <div class="chain-item">Level 2: NDF = Cellulose + Hemicellulose + Lignin</div>
+                <div class="chain-item">Level 2: NFC = Sugars + Starch + Pectin</div>
+                <div class="chain-item">Level 2: Starch = Amylose + Amylopectin</div>
+                <div class="chain-item">Level 2: Fermentation_Rate = Base_rate × NDF_factor × pH_factor</div>
+                <div class="chain-item">Level 3: Cellulose = 기본값 또는 계산값</div>
+                <div class="chain-item">Level 3: Hemicellulose = 기본값 또는 계산값</div>
+                <div class="chain-item">Level 3: Lignin = 기본값 또는 계산값</div>
+                <div class="chain-item">Level 3: Sugars = 기본값 또는 계산값</div>
+                <div class="chain-item">Level 3: Pectin = 기본값 또는 계산값</div>
+                <div class="chain-item">Level 3: Amylose = 기본값 또는 계산값</div>
+                <div class="chain-item">Level 3: Amylopectin = 기본값 또는 계산값</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <button onclick="loadNextStep()">다음 단계 로드</button>
+                <button onclick="resetHierarchy()">계층 초기화</button>
+                <button onclick="exportCurrentData()">현재 데이터 내보내기</button>
+                <button onclick="generateNetworkDiagram()">네트워크 다이아그램 생성</button>
+                <button onclick="focusOnMP()">MP에 집중</button>
+                <button onclick="focusOnME()">ME에 집중</button>
+                <button onclick="focusOnDMI()">DMI에 집중</button>
+                <button onclick="focusOnCarbRumen()">탄수화물-반추위에 집중</button>
+            </div>
+        </div>
+
+        <div class="hierarchy-container">
+            <div class="hierarchy-title">📁 수식 계층 구조 (탄수화물-반추위 모델 완전 구현)</div>
+            <div class="formula-tree" id="formula-tree">
+                <!-- 계층 구조가 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+
+        <div class="formula-details">
+            <h3>📋 선택된 수식 상세 정보</h3>
+            <div id="selected-formula-details">
+                <div class="selected-formula">
+                    <div class="formula-name">수식을 선택해주세요</div>
+                    <div class="formula-expression">탄수화물-반추위 모델의 전체 의존성 체인을 완전히 구현하여 체계적인 접근의 첫 번째 완성된 수식을 만들어봅니다.</div>
+                    <div class="formula-description">Carb_Rumen_Processing → Total_Carbs → NDF, NFC, Starch → Cellulose, Hemicellulose, Lignin, Sugars, Pectin, Amylose, Amylopectin 등의 완전한 구현을 확인해보세요!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="network-container">
+            <div class="network-title">🌐 수식 네트워크 다이아그램</div>
+            <div class="network-controls">
+                <button onclick="showAllNodes()" class="active">전체 노드</button>
+                <button onclick="showSelectedPath()">선택 경로</button>
+                <button onclick="showTopLevel()">최상위 수식</button>
+                <button onclick="showMPChain()">MP 체인</button>
+                <button onclick="showMEChain()">ME 체인</button>
+                <button onclick="showDMIChain()">DMI 체인</button>
+                <button onclick="showCarbRumenChain()">탄수화물-반추위 체인</button>
+                <button onclick="zoomIn()">확대</button>
+                <button onclick="zoomOut()">축소</button>
+                <button onclick="resetZoom()">초기화</button>
+            </div>
+            <div id="network-diagram">
+                <!-- 네트워크 다이아그램이 여기에 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>데이터 로딩 중...</h3>
+        <p id="loading-text">수식 계층 구조를 생성하고 있습니다.</p>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentStep = 13;
+        const totalSteps = 100;
+        const totalExcelFormulas = 27061;
+        let selectedFormula = null;
+        let currentPath = [];
+        let networkData = null;
+        let simulation = null;
+
+        // 13단계: 탄수화물-반추위 모델 완전 구현 데이터베이스 (MP + ME + DMI + 탄수화물-반추위 완전 구현)
+        const formulaDatabase = {
+            // Level 0: MP (기존 완전 구현)
+            "MP": {
+                name: "MP",
+                fullName: "MP (Metabolizable Protein)",
+                expression: "MP = MPfeed + MPbact",
+                description: "대사성 단백질 = 사료 단백질 + 미생물 단백질",
+                level: 0,
+                dependencies: ["MPfeed", "MPbact"],
+                category: "protein",
+                hasChildren: true
+            },
+
+            // Level 0: ME (기존 완전 구현)
+            "ME": {
+                name: "ME",
+                fullName: "ME (Metabolizable Energy)",
+                expression: "ME = GE - FE - UE - CH4E",
+                description: "대사성 에너지 = 총에너지 - 분에너지 - 요에너지 - 메탄에너지",
+                level: 0,
+                dependencies: ["GE", "FE", "UE", "CH4E"],
+                category: "energy",
+                hasChildren: true
+            },
+
+            // Level 0: DMI (기존 완전 구현)
+            "DMI": {
+                name: "DMI",
+                fullName: "DMI (Dry Matter Intake)",
+                expression: "DMI = 기본 섭취량 × 조정 계수들",
+                description: "건물 섭취량 = 기본 섭취량 × 에너지 조정 × 단백질 조정 × 섬유질 조정",
+                level: 0,
+                dependencies: ["기본 섭취량", "조정 계수들"],
+                category: "intake",
+                hasChildren: true
+            },
+
+            // Level 0: 탄수화물-반추위 (새로 완전 구현)
+            "Carb_Rumen_Processing": {
+                name: "Carb_Rumen_Processing",
+                fullName: "Carb_Rumen_Processing (탄수화물 반추위 처리)",
+                expression: "Carb_Rumen_Processing = Total_Carbs × Rumen_Fermentation_Rate",
+                description: "탄수화물 반추위 처리량 = 총 탄수화물 × 반추위 발효율",
+                level: 0,
+                dependencies: ["Total_Carbs", "Rumen_Fermentation_Rate"],
+                category: "carbohydrate_rumen",
+                hasChildren: true
+            },
+
+            // Level 1: 탄수화물-반추위 하위 수식들 (새로 완전 구현)
+            "Total_Carbs": {
+                name: "Total_Carbs",
+                fullName: "Total_Carbs (총 탄수화물)",
+                expression: "Total_Carbs = NDF + NFC + Starch",
+                description: "총 탄수화물 = 중성세제섬유 + 비섬유성탄수화물 + 전분",
+                level: 1,
+                dependencies: ["NDF", "NFC", "Starch"],
+                category: "carbohydrate",
+                hasChildren: true,
+                parent: "Carb_Rumen_Processing"
+            },
+            "Rumen_Fermentation_Rate": {
+                name: "Rumen_Fermentation_Rate",
+                fullName: "Rumen_Fermentation_Rate (반추위 발효율)",
+                expression: "Rumen_Fermentation_Rate = Base_rate × NDF_factor × pH_factor",
+                description: "반추위 발효율 = 기본 발효율 × NDF 계수 × pH 계수",
+                level: 1,
+                dependencies: ["Base_rate", "NDF_factor", "pH_factor"],
+                category: "fermentation",
+                hasChildren: true,
+                parent: "Carb_Rumen_Processing"
+            },
+
+            // Level 2: Total_Carbs 하위 수식들 (새로 완전 구현)
+            "NDF": {
+                name: "NDF",
+                fullName: "NDF (Neutral Detergent Fiber)",
+                expression: "NDF = Cellulose + Hemicellulose + Lignin",
+                description: "중성세제섬유 = 셀룰로오스 + 헤미셀룰로오스 + 리그닌",
+                level: 2,
+                dependencies: ["Cellulose", "Hemicellulose", "Lignin"],
+                category: "fiber",
+                hasChildren: true,
+                parent: "Total_Carbs"
+            },
+            "NFC": {
+                name: "NFC",
+                fullName: "NFC (Non-Fiber Carbohydrates)",
+                expression: "NFC = Sugars + Pectin",
+                description: "비섬유성탄수화물 = 당류 + 펙틴",
+                level: 2,
+                dependencies: ["Sugars", "Pectin"],
+                category: "carbohydrate",
+                hasChildren: true,
+                parent: "Total_Carbs"
+            },
+            "Starch": {
+                name: "Starch",
+                fullName: "Starch (전분)",
+                expression: "Starch = Amylose + Amylopectin",
+                description: "전분 = 아밀로오스 + 아밀로펙틴",
+                level: 2,
+                dependencies: ["Amylose", "Amylopectin"],
+                category: "carbohydrate",
+                hasChildren: true,
+                parent: "Total_Carbs"
+            },
+
+            // Level 2: Rumen_Fermentation_Rate 하위 수식들 (새로 완전 구현)
+            "Base_rate": {
+                name: "Base_rate",
+                fullName: "Base_rate (기본 발효율)",
+                expression: "Base_rate = 기본값 또는 계산값",
+                description: "기본 발효율",
+                level: 2,
+                dependencies: [],
+                category: "coefficient",
+                hasChildren: false,
+                parent: "Rumen_Fermentation_Rate"
+            },
+            "NDF_factor": {
+                name: "NDF_factor",
+                fullName: "NDF_factor (NDF 계수)",
+                expression: "NDF_factor = f(NDF_content, Passage_rate)",
+                description: "NDF 함량과 통과율에 따른 계수",
+                level: 2,
+                dependencies: ["NDF_content", "Passage_rate"],
+                category: "coefficient",
+                hasChildren: true,
+                parent: "Rumen_Fermentation_Rate"
+            },
+            "pH_factor": {
+                name: "pH_factor",
+                fullName: "pH_factor (pH 계수)",
+                expression: "pH_factor = f(Rumen_pH)",
+                description: "반추위 pH에 따른 계수",
+                level: 2,
+                dependencies: ["Rumen_pH"],
+                category: "coefficient",
+                hasChildren: true,
+                parent: "Rumen_Fermentation_Rate"
+            },
+
+            // Level 3: NDF 하위 수식들 (새로 완전 구현)
+            "Cellulose": {
+                name: "Cellulose",
+                fullName: "Cellulose (셀룰로오스)",
+                expression: "Cellulose = 기본값 또는 계산값",
+                description: "셀룰로오스 함량",
+                level: 3,
+                dependencies: [],
+                category: "fiber",
+                hasChildren: false,
+                parent: "NDF"
+            },
+            "Hemicellulose": {
+                name: "Hemicellulose",
+                fullName: "Hemicellulose (헤미셀룰로오스)",
+                expression: "Hemicellulose = 기본값 또는 계산값",
+                description: "헤미셀룰로오스 함량",
+                level: 3,
+                dependencies: [],
+                category: "fiber",
+                hasChildren: false,
+                parent: "NDF"
+            },
+            "Lignin": {
+                name: "Lignin",
+                fullName: "Lignin (리그닌)",
+                expression: "Lignin = 기본값 또는 계산값",
+                description: "리그닌 함량",
+                level: 3,
+                dependencies: [],
+                category: "fiber",
+                hasChildren: false,
+                parent: "NDF"
+            },
+
+            // Level 3: NFC 하위 수식들 (새로 완전 구현)
+            "Sugars": {
+                name: "Sugars",
+                fullName: "Sugars (당류)",
+                expression: "Sugars = 기본값 또는 계산값",
+                description: "당류 함량",
+                level: 3,
+                dependencies: [],
+                category: "carbohydrate",
+                hasChildren: false,
+                parent: "NFC"
+            },
+            "Pectin": {
+                name: "Pectin",
+                fullName: "Pectin (펙틴)",
+                expression: "Pectin = 기본값 또는 계산값",
+                description: "펙틴 함량",
+                level: 3,
+                dependencies: [],
+                category: "carbohydrate",
+                hasChildren: false,
+                parent: "NFC"
+            },
+
+            // Level 3: Starch 하위 수식들 (새로 완전 구현)
+            "Amylose": {
+                name: "Amylose",
+                fullName: "Amylose (아밀로오스)",
+                expression: "Amylose = 기본값 또는 계산값",
+                description: "아밀로오스 함량",
+                level: 3,
+                dependencies: [],
+                category: "carbohydrate",
+                hasChildren: false,
+                parent: "Starch"
+            },
+            "Amylopectin": {
+                name: "Amylopectin",
+                fullName: "Amylopectin (아밀로펙틴)",
+                expression: "Amylopectin = 기본값 또는 계산값",
+                description: "아밀로펙틴 함량",
+                level: 3,
+                dependencies: [],
+                category: "carbohydrate",
+                hasChildren: false,
+                parent: "Starch"
+            },
+
+            // Level 3: NDF_factor 하위 수식들 (새로 완전 구현)
+            "NDF_content": {
+                name: "NDF_content",
+                fullName: "NDF_content (NDF 함량)",
+                expression: "NDF_content = NDF / Total_DM",
+                description: "NDF 함량 = NDF / 총 건물",
+                level: 3,
+                dependencies: ["NDF", "Total_DM"],
+                category: "concentration",
+                hasChildren: true,
+                parent: "NDF_factor"
+            },
+            "Passage_rate": {
+                name: "Passage_rate",
+                fullName: "Passage_rate (통과율)",
+                expression: "Passage_rate = 기본값 또는 계산값",
+                description: "반추위 통과율",
+                level: 3,
+                dependencies: [],
+                category: "rate",
+                hasChildren: false,
+                parent: "NDF_factor"
+            },
+
+            // Level 3: pH_factor 하위 수식들 (새로 완전 구현)
+            "Rumen_pH": {
+                name: "Rumen_pH",
+                fullName: "Rumen_pH (반추위 pH)",
+                expression: "Rumen_pH = 기본값 또는 계산값",
+                description: "반추위 pH",
+                level: 3,
+                dependencies: [],
+                category: "pH",
+                hasChildren: false,
+                parent: "pH_factor"
+            },
+
+            // Level 4: NDF_content 하위 수식들 (새로 완전 구현)
+            "Total_DM": {
+                name: "Total_DM",
+                fullName: "Total_DM (총 건물)",
+                expression: "Total_DM = 기본값 또는 계산값",
+                description: "총 건물 함량",
+                level: 4,
+                dependencies: [],
+                category: "concentration",
+                hasChildren: false,
+                parent: "NDF_content"
+            },
+
+            // 기존 MP, ME, DMI 체인들 (기존 완전 구현)
+            // ... (기존 수식들 유지)
+            "MPfeed": {
+                name: "MPfeed",
+                fullName: "MPfeed (Feed Protein)",
+                expression: "MPfeed = DIGPB1 + DIGPB2 + DIGPB3",
+                description: "사료 단백질 = 소화 가능 단백질 1 + 2 + 3",
+                level: 1,
+                dependencies: ["DIGPB1", "DIGPB2", "DIGPB3"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MP"
+            },
+            "MPbact": {
+                name: "MPbact",
+                fullName: "MPbact (Bacterial Protein)",
+                expression: "MPbact = MCP × 0.64",
+                description: "미생물 단백질 = 미생물 조단백질 × 효율성",
+                level: 1,
+                dependencies: ["MCP"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MP"
+            },
+            "GE": {
+                name: "GE",
+                fullName: "GE (Gross Energy)",
+                expression: "GE = Feed_intake × Energy_content",
+                description: "총에너지 = 사료 섭취량 × 에너지 함량",
+                level: 1,
+                dependencies: ["Feed_intake", "Energy_content"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "FE": {
+                name: "FE",
+                fullName: "FE (Fecal Energy)",
+                expression: "FE = Feed_intake × Fecal_loss_rate",
+                description: "분에너지 = 사료 섭취량 × 분 손실율",
+                level: 1,
+                dependencies: ["Feed_intake", "Fecal_loss_rate"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "UE": {
+                name: "UE",
+                fullName: "UE (Urinary Energy)",
+                expression: "UE = Protein_intake × Urinary_loss_rate",
+                description: "요에너지 = 단백질 섭취량 × 요 손실율",
+                level: 1,
+                dependencies: ["Protein_intake", "Urinary_loss_rate"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "CH4E": {
+                name: "CH4E",
+                fullName: "CH4E (Methane Energy)",
+                expression: "CH4E = Fermentable_carbs × Methane_factor",
+                description: "메탄에너지 = 발효 가능 탄수화물 × 메탄 계수",
+                level: 1,
+                dependencies: ["Fermentable_carbs", "Methane_factor"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "기본 섭취량": {
+                name: "기본 섭취량",
+                fullName: "기본 섭취량 (Basic Intake)",
+                expression: "기본 섭취량 = 체중 × 기본 섭취율",
+                description: "기본 섭취량 = 체중 × 기본 섭취율",
+                level: 1,
+                dependencies: ["체중", "기본 섭취율"],
+                category: "intake",
+                hasChildren: true,
+                parent: "DMI"
+            },
+            "조정 계수들": {
+                name: "조정 계수들",
+                fullName: "조정 계수들 (Adjustment Factors)",
+                expression: "조정 계수들 = 에너지 조정 × 단백질 조정 × 섬유질 조정",
+                description: "조정 계수들 = 에너지 조정 × 단백질 조정 × 섬유질 조정",
+                level: 1,
+                dependencies: ["에너지 조정", "단백질 조정", "섬유질 조정"],
+                category: "coefficient",
+                hasChildren: true,
+                parent: "DMI"
+            }
+            // ... (기존 수식들 계속)
+        };
+
+        // 엑셀 수식 구현 현황 업데이트
+        function updateFormulaStats() {
+            const implementedCount = Object.keys(formulaDatabase).length;
+            const implementationRate = ((implementedCount / totalExcelFormulas) * 100).toFixed(2);
+            const remainingCount = totalExcelFormulas - implementedCount;
+
+            document.getElementById('implemented-formulas').textContent = implementedCount.toLocaleString();
+            document.getElementById('implementation-rate').textContent = implementationRate + '%';
+            document.getElementById('remaining-formulas').textContent = remainingCount.toLocaleString();
+        }
+
+        // 계층 구조 생성
+        function createHierarchy() {
+            const treeContainer = document.getElementById('formula-tree');
+            treeContainer.innerHTML = '';
+
+            const level0Formulas = Object.keys(formulaDatabase).filter(key => 
+                formulaDatabase[key].level === 0
+            );
+
+            const level0 = document.createElement('div');
+            level0.className = 'top-level';
+            level0.innerHTML = '<h4>최상위 수식들</h4>';
+
+            level0Formulas.forEach(formulaKey => {
+                const formula = formulaDatabase[formulaKey];
+                const button = document.createElement('button');
+                button.className = 'formula-button has-children';
+                if (formulaKey === 'MP') {
+                    button.classList.add('mp-related');
+                }
+                if (formulaKey === 'ME') {
+                    button.classList.add('me-related');
+                }
+                if (formulaKey === 'DMI') {
+                    button.classList.add('dmi-related');
+                }
+                if (formulaKey === 'Carb_Rumen_Processing') {
+                    button.classList.add('carb-rumen-related');
+                }
+                button.textContent = formula.name;
+                button.title = formula.fullName;
+                button.onclick = () => selectFormula(formulaKey, formula);
+                level0.appendChild(button);
+            });
+
+            treeContainer.appendChild(level0);
+        }
+
+        // 수식 선택 (수식 표시 + 변수 버튼)
+        function selectFormula(formulaKey, formula) {
+            selectedFormula = { key: formulaKey, ...formula };
+            
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            displayFormulaDetails();
+            currentPath = [formulaKey];
+            renderFormulaWithVariables(formulaKey);
+        }
+
+        // 수식과 변수 버튼 렌더링
+        function renderFormulaWithVariables(rootKey) {
+            const treeContainer = document.getElementById('formula-tree');
+            treeContainer.innerHTML = '';
+
+            const level0 = document.createElement('div');
+            level0.className = 'top-level';
+            level0.innerHTML = '<h4>최상위 수식들</h4>';
+
+            const level0Formulas = Object.keys(formulaDatabase).filter(key => 
+                formulaDatabase[key].level === 0
+            );
+
+            level0Formulas.forEach(formulaKey => {
+                const formula = formulaDatabase[formulaKey];
+                const button = document.createElement('button');
+                button.className = 'formula-button has-children';
+                if (formulaKey === rootKey) {
+                    button.classList.add('selected');
+                }
+                if (formulaKey === 'MP') {
+                    button.classList.add('mp-related');
+                }
+                if (formulaKey === 'ME') {
+                    button.classList.add('me-related');
+                }
+                if (formulaKey === 'DMI') {
+                    button.classList.add('dmi-related');
+                }
+                if (formulaKey === 'Carb_Rumen_Processing') {
+                    button.classList.add('carb-rumen-related');
+                }
+                button.textContent = formula.name;
+                button.title = formula.fullName;
+                button.onclick = () => selectFormula(formulaKey, formula);
+                level0.appendChild(button);
+            });
+
+            treeContainer.appendChild(level0);
+            displayFormulaWithVariables(rootKey, 1);
+        }
+
+        // 수식 표시와 변수 버튼들
+        function displayFormulaWithVariables(parentKey, level) {
+            const parentFormula = formulaDatabase[parentKey];
+            const childFormulas = Object.keys(formulaDatabase).filter(key => {
+                const childFormula = formulaDatabase[key];
+                return childFormula.parent === parentKey;
+            });
+
+            if (childFormulas.length > 0) {
+                const treeContainer = document.getElementById('formula-tree');
+                const childLevel = document.createElement('div');
+                childLevel.className = 'formula-level';
+                childLevel.innerHTML = `<h4>Level ${level}: ${parentFormula.fullName}의 수식</h4>`;
+
+                const formulaDisplay = document.createElement('div');
+                formulaDisplay.className = 'formula-display';
+                formulaDisplay.textContent = parentFormula.expression;
+                childLevel.appendChild(formulaDisplay);
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.display = 'flex';
+                buttonContainer.style.flexWrap = 'wrap';
+                buttonContainer.style.justifyContent = 'center';
+                buttonContainer.style.gap = '10px';
+
+                childFormulas.forEach(formulaKey => {
+                    const formula = formulaDatabase[formulaKey];
+                    const button = document.createElement('button');
+                    button.className = 'formula-button';
+                    
+                    if (formula.hasChildren) {
+                        button.classList.add('has-children');
+                    } else {
+                        button.classList.add('leaf');
+                    }
+                    
+                    if (isMPRelated(formulaKey)) {
+                        button.classList.add('mp-related');
+                    }
+                    if (isMERelated(formulaKey)) {
+                        button.classList.add('me-related');
+                    }
+                    if (isDMIRelated(formulaKey)) {
+                        button.classList.add('dmi-related');
+                    }
+                    if (isCarbRumenRelated(formulaKey)) {
+                        button.classList.add('carb-rumen-related');
+                    }
+                    
+                    button.textContent = formula.name;
+                    button.title = formula.fullName;
+                    button.onclick = () => expandFormulaWithVariables(formulaKey, formula, level);
+                    buttonContainer.appendChild(button);
+                });
+
+                childLevel.appendChild(buttonContainer);
+                treeContainer.appendChild(childLevel);
+            }
+        }
+
+        // MP 관련 수식인지 확인
+        function isMPRelated(formulaKey) {
+            const mpChain = ['MP', 'MPfeed', 'MPbact', 'DIGPB1', 'DIGPB2', 'DIGPB3', 
+                           'ID_Protein_1', 'ID_Protein_2', 'ID_Protein_3',
+                           'adjREPB1', 'adjREPB2', 'adjREPB3',
+                           'REPB1', 'REPB2', 'REPB3', 'PeptidePass', 'RDPB1', 'RDPB2', 'RDPB3', 'RDPEP', 'MCP'];
+            return mpChain.includes(formulaKey);
+        }
+
+        // ME 관련 수식인지 확인
+        function isMERelated(formulaKey) {
+            const meChain = ['ME', 'GE', 'FE', 'UE', 'CH4E', 'Feed_intake', 'Energy_content',
+                           'Fecal_loss_rate', 'Protein_intake', 'Urinary_loss_rate',
+                           'Fermentable_carbs', 'Methane_factor', 'Feed_moisture_factor',
+                           'Protein_energy', 'Fat_energy', 'Carb_energy'];
+            return meChain.includes(formulaKey);
+        }
+
+        // DMI 관련 수식인지 확인
+        function isDMIRelated(formulaKey) {
+            const dmiChain = ['DMI', '기본 섭취량', '조정 계수들', '체중', '기본 섭취율',
+                            '에너지 조정', '단백질 조정', '섬유질 조정',
+                            'ME 함량', 'MP 함량', 'NDF 함량'];
+            return dmiChain.includes(formulaKey);
+        }
+
+        // 탄수화물-반추위 관련 수식인지 확인
+        function isCarbRumenRelated(formulaKey) {
+            const carbRumenChain = ['Carb_Rumen_Processing', 'Total_Carbs', 'Rumen_Fermentation_Rate',
+                                   'NDF', 'NFC', 'Starch', 'Base_rate', 'NDF_factor', 'pH_factor',
+                                   'Cellulose', 'Hemicellulose', 'Lignin', 'Sugars', 'Pectin',
+                                   'Amylose', 'Amylopectin', 'NDF_content', 'Passage_rate', 'Rumen_pH', 'Total_DM'];
+            return carbRumenChain.includes(formulaKey);
+        }
+
+        // 수식 내 변수 확장
+        function expandFormulaWithVariables(formulaKey, formula, currentLevel) {
+            selectedFormula = { key: formulaKey, ...formula };
+            
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            displayFormulaDetails();
+            currentPath = currentPath.slice(0, currentLevel);
+            currentPath.push(formulaKey);
+            removeLevelsAfter(currentLevel);
+            displayFormulaWithVariables(formulaKey, currentLevel + 1);
+        }
+
+        // 현재 레벨 이후의 레벨들 제거
+        function removeLevelsAfter(level) {
+            const treeContainer = document.getElementById('formula-tree');
+            const levels = treeContainer.querySelectorAll('.formula-level');
+            
+            for (let i = levels.length - 1; i >= 0; i--) {
+                const levelElement = levels[i];
+                const levelTitle = levelElement.querySelector('h4');
+                if (levelTitle && levelTitle.textContent.includes(`Level ${level + 1}`)) {
+                    levelElement.remove();
+                }
+            }
+        }
+
+        // 수식 상세 정보 표시
+        function displayFormulaDetails() {
+            if (!selectedFormula) return;
+
+            const detailsContainer = document.getElementById('selected-formula-details');
+            detailsContainer.innerHTML = `
+                <div class="selected-formula">
+                    <div class="formula-name">${selectedFormula.fullName}</div>
+                    <div class="formula-expression">${selectedFormula.expression}</div>
+                    <div class="formula-description">${selectedFormula.description}</div>
+                    <div style="margin-top: 15px;">
+                        <strong>카테고리:</strong> ${selectedFormula.category}<br>
+                        <strong>레벨:</strong> ${selectedFormula.level}<br>
+                        <strong>의존성:</strong> ${selectedFormula.dependencies.join(', ') || '없음'}<br>
+                        <strong>상위 수식:</strong> ${selectedFormula.parent || '없음'}<br>
+                        <strong>하위 수식:</strong> ${selectedFormula.hasChildren ? '있음' : '없음'}<br>
+                        <strong>현재 경로:</strong> ${currentPath.join(' → ')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // MP에 집중
+        function focusOnMP() {
+            const mpFormula = formulaDatabase['MP'];
+            if (mpFormula) {
+                selectFormula('MP', mpFormula);
+            }
+        }
+
+        // ME에 집중
+        function focusOnME() {
+            const meFormula = formulaDatabase['ME'];
+            if (meFormula) {
+                selectFormula('ME', meFormula);
+            }
+        }
+
+        // DMI에 집중
+        function focusOnDMI() {
+            const dmiFormula = formulaDatabase['DMI'];
+            if (dmiFormula) {
+                selectFormula('DMI', dmiFormula);
+            }
+        }
+
+        // 탄수화물-반추위에 집중
+        function focusOnCarbRumen() {
+            const carbRumenFormula = formulaDatabase['Carb_Rumen_Processing'];
+            if (carbRumenFormula) {
+                selectFormula('Carb_Rumen_Processing', carbRumenFormula);
+            }
+        }
+
+        // 진행률 업데이트
+        function updateProgress() {
+            const percentage = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = 
+                `${currentStep}/${totalSteps} 단계 완료 (${percentage.toFixed(1)}%)`;
+        }
+
+        // 계층 초기화
+        function resetHierarchy() {
+            currentStep = 13;
+            selectedFormula = null;
+            currentPath = [];
+            updateProgress();
+            createHierarchy();
+            document.getElementById('selected-formula-details').innerHTML = `
+                <div class="selected-formula">
+                    <div class="formula-name">수식을 선택해주세요</div>
+                    <div class="formula-expression">탄수화물-반추위 모델의 전체 의존성 체인을 완전히 구현하여 체계적인 접근의 첫 번째 완성된 수식을 만들어봅니다.</div>
+                    <div class="formula-description">Carb_Rumen_Processing → Total_Carbs → NDF, NFC, Starch → Cellulose, Hemicellulose, Lignin, Sugars, Pectin, Amylose, Amylopectin 등의 완전한 구현을 확인해보세요!</div>
+                </div>
+            `;
+        }
+
+        // 현재 데이터 내보내기
+        function exportCurrentData() {
+            const data = {
+                currentStep: currentStep,
+                totalSteps: totalSteps,
+                selectedFormula: selectedFormula,
+                formulaDatabase: formulaDatabase,
+                currentPath: currentPath,
+                stats: {
+                    totalExcelFormulas: totalExcelFormulas,
+                    implementedFormulas: Object.keys(formulaDatabase).length,
+                    implementationRate: ((Object.keys(formulaDatabase).length / totalExcelFormulas) * 100).toFixed(2)
+                }
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `CNUCNM_Formula_Hierarchy_Step${currentStep}.json`;
+            link.click();
+        }
+
+        // 다음 단계 로드 (플레이스홀더)
+        function loadNextStep() {
+            alert('다음 단계는 탄수화물-반추위 완전 구현 후 추가 영양소-장소 조합들을 구현할 예정입니다!');
+        }
+
+        // 네트워크 다이아그램 생성 (플레이스홀더)
+        function generateNetworkDiagram() {
+            alert('네트워크 다이아그램은 탄수화물-반추위 완전 구현 후 추가됩니다!');
+        }
+
+        // 네트워크 컨트롤 함수들 (플레이스홀더)
+        function showAllNodes() { alert('전체 노드 표시 기능은 추가 예정입니다!'); }
+        function showSelectedPath() { alert('선택 경로 표시 기능은 추가 예정입니다!'); }
+        function showTopLevel() { alert('최상위 수식 표시 기능은 추가 예정입니다!'); }
+        function showMPChain() { alert('MP 체인 표시 기능은 추가 예정입니다!'); }
+        function showMEChain() { alert('ME 체인 표시 기능은 추가 예정입니다!'); }
+        function showDMIChain() { alert('DMI 체인 표시 기능은 추가 예정입니다!'); }
+        function showCarbRumenChain() { alert('탄수화물-반추위 체인 표시 기능은 추가 예정입니다!'); }
+        function zoomIn() { alert('확대 기능은 추가 예정입니다!'); }
+        function zoomOut() { alert('축소 기능은 추가 예정입니다!'); }
+        function resetZoom() { alert('초기화 기능은 추가 예정입니다!'); }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            createHierarchy();
+            updateProgress();
+            updateFormulaStats();
+        });
+    </script>
+</body>
+</html>

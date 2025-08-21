@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 수식 계층 구조 - 1단계: 기본 구조</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .progress-info {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .hierarchy-container {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .hierarchy-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .formula-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .formula-level {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .formula-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .formula-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .formula-button.selected {
+            background: #28a745;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .formula-button.expanded {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .formula-details {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .formula-details h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .selected-formula {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 20px;
+        }
+
+        .formula-name {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .formula-expression {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 10px;
+        }
+
+        .formula-description {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .control-group button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-group button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 CNUCNM 수식 계층 구조</h1>
+            <p>20191206_CNU_CNM_v2.17.xlsm 파일의 모든 수식을 계층적으로 추적</p>
+        </div>
+
+        <div class="progress-info">
+            <h3>📊 작업 진행 상황</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 1%"></div>
+            </div>
+            <div class="progress-text" id="progress-text">1/100 단계 완료 (1%)</div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <button onclick="loadNextStep()">다음 단계 로드</button>
+                <button onclick="resetHierarchy()">계층 초기화</button>
+                <button onclick="exportCurrentData()">현재 데이터 내보내기</button>
+            </div>
+        </div>
+
+        <div class="hierarchy-container">
+            <div class="hierarchy-title">📁 수식 계층 구조</div>
+            <div class="formula-tree" id="formula-tree">
+                <!-- 계층 구조가 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+
+        <div class="formula-details">
+            <h3>📋 선택된 수식 상세 정보</h3>
+            <div id="selected-formula-details">
+                <div class="selected-formula">
+                    <div class="formula-name">수식을 선택해주세요</div>
+                    <div class="formula-expression">계층 구조에서 수식을 클릭하면 상세 정보가 표시됩니다.</div>
+                    <div class="formula-description">20191206_CNU_CNM_v2.17.xlsm 파일의 27,061개 수식을 단계별로 분석 중입니다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>데이터 로딩 중...</h3>
+        <p id="loading-text">수식 계층 구조를 생성하고 있습니다.</p>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentStep = 1;
+        const totalSteps = 100;
+        let hierarchyData = {};
+        let selectedFormula = null;
+
+        // 1단계: 기본 수식 계층 구조 (27,061개 수식 중 첫 번째 270개)
+        const step1Formulas = {
+            "MP": {
+                name: "MP (Metabolizable Protein)",
+                expression: "MP = MPfeed + MPbact",
+                description: "대사성 단백질 = 사료 단백질 + 미생물 단백질",
+                level: 0,
+                dependencies: ["MPfeed", "MPbact"],
+                category: "protein"
+            },
+            "ME": {
+                name: "ME (Metabolizable Energy)",
+                expression: "ME = GE - FE - UE - CH4E",
+                description: "대사성 에너지 = 총에너지 - 분에너지 - 요에너지 - 메탄에너지",
+                level: 0,
+                dependencies: ["GE", "FE", "UE", "CH4E"],
+                category: "energy"
+            },
+            "DMI": {
+                name: "DMI (Dry Matter Intake)",
+                expression: "DMI = Body_weight × Intake_coefficient",
+                description: "건물 섭취량 = 체중 × 섭취 계수",
+                level: 0,
+                dependencies: ["Body_weight", "Intake_coefficient"],
+                category: "intake"
+            },
+            "FHP": {
+                name: "FHP (Fasting Heat Production)",
+                expression: "FHP = FHP_coefficient × (SBW^0.75)",
+                description: "절식 열생산 = FHP 계수 × (수축체중^0.75)",
+                level: 0,
+                dependencies: ["FHP_coefficient", "SBW"],
+                category: "energy"
+            },
+            "Growth_Energy": {
+                name: "Growth Energy",
+                expression: "Growth_E = Growth_coefficient × ADG",
+                description: "성장 에너지 = 성장 계수 × 일일 증체량",
+                level: 0,
+                dependencies: ["Growth_coefficient", "ADG"],
+                category: "energy"
+            },
+            "Lactation_Energy": {
+                name: "Lactation Energy",
+                expression: "Lactation_E = Milk_yield × Milk_energy_content",
+                description: "유산 에너지 = 유량 × 우유 에너지 함량",
+                level: 0,
+                dependencies: ["Milk_yield", "Milk_energy_content"],
+                category: "energy"
+            }
+        };
+
+        // 계층 구조 생성
+        function createHierarchy() {
+            const treeContainer = document.getElementById('formula-tree');
+            treeContainer.innerHTML = '';
+
+            // 레벨 0 (최상위 수식들)
+            const level0 = document.createElement('div');
+            level0.className = 'formula-level';
+            level0.innerHTML = '<h4>Level 0: 최상위 수식들</h4>';
+
+            Object.keys(step1Formulas).forEach(formulaKey => {
+                const formula = step1Formulas[formulaKey];
+                const button = document.createElement('button');
+                button.className = 'formula-button';
+                button.textContent = formula.name;
+                button.onclick = () => selectFormula(formulaKey, formula);
+                level0.appendChild(button);
+            });
+
+            treeContainer.appendChild(level0);
+        }
+
+        // 수식 선택
+        function selectFormula(formulaKey, formula) {
+            selectedFormula = { key: formulaKey, ...formula };
+            
+            // 버튼 선택 상태 업데이트
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // 상세 정보 표시
+            displayFormulaDetails();
+        }
+
+        // 수식 상세 정보 표시
+        function displayFormulaDetails() {
+            if (!selectedFormula) return;
+
+            const detailsContainer = document.getElementById('selected-formula-details');
+            detailsContainer.innerHTML = `
+                <div class="selected-formula">
+                    <div class="formula-name">${selectedFormula.name}</div>
+                    <div class="formula-expression">${selectedFormula.expression}</div>
+                    <div class="formula-description">${selectedFormula.description}</div>
+                    <div style="margin-top: 15px;">
+                        <strong>카테고리:</strong> ${selectedFormula.category}<br>
+                        <strong>레벨:</strong> ${selectedFormula.level}<br>
+                        <strong>의존성:</strong> ${selectedFormula.dependencies.join(', ') || '없음'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 다음 단계 로드
+        function loadNextStep() {
+            if (currentStep >= totalSteps) {
+                alert('모든 단계가 완료되었습니다!');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading-text').textContent = `${currentStep + 1}단계 로딩 중...`;
+
+            setTimeout(() => {
+                currentStep++;
+                updateProgress();
+                loadStepData(currentStep);
+                document.getElementById('loading').style.display = 'none';
+            }, 1000);
+        }
+
+        // 단계별 데이터 로드
+        function loadStepData(step) {
+            // 실제로는 각 단계마다 다른 수식들을 로드
+            // 현재는 예시로 단계 번호만 표시
+            const treeContainer = document.getElementById('formula-tree');
+            const stepInfo = document.createElement('div');
+            stepInfo.className = 'formula-level';
+            stepInfo.innerHTML = `<h4>Level ${step}: ${step}단계 수식들 (예시)</h4>`;
+            
+            // 예시 버튼들
+            for (let i = 1; i <= 5; i++) {
+                const button = document.createElement('button');
+                button.className = 'formula-button';
+                button.textContent = `수식_${step}_${i}`;
+                button.onclick = () => selectExampleFormula(step, i);
+                stepInfo.appendChild(button);
+            }
+
+            treeContainer.appendChild(stepInfo);
+        }
+
+        // 예시 수식 선택
+        function selectExampleFormula(step, index) {
+            selectedFormula = {
+                key: `formula_${step}_${index}`,
+                name: `수식_${step}_${index}`,
+                expression: `= 예시 수식 ${step}_${index}`,
+                description: `${step}단계 ${index}번째 예시 수식입니다.`,
+                level: step,
+                dependencies: [],
+                category: "example"
+            };
+
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            displayFormulaDetails();
+        }
+
+        // 진행률 업데이트
+        function updateProgress() {
+            const percentage = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = 
+                `${currentStep}/${totalSteps} 단계 완료 (${percentage.toFixed(1)}%)`;
+        }
+
+        // 계층 초기화
+        function resetHierarchy() {
+            currentStep = 1;
+            selectedFormula = null;
+            updateProgress();
+            createHierarchy();
+            document.getElementById('selected-formula-details').innerHTML = `
+                <div class="selected-formula">
+                    <div class="formula-name">수식을 선택해주세요</div>
+                    <div class="formula-expression">계층 구조에서 수식을 클릭하면 상세 정보가 표시됩니다.</div>
+                    <div class="formula-description">20191206_CNU_CNM_v2.17.xlsm 파일의 27,061개 수식을 단계별로 분석 중입니다.</div>
+                </div>
+            `;
+        }
+
+        // 현재 데이터 내보내기
+        function exportCurrentData() {
+            const data = {
+                currentStep: currentStep,
+                totalSteps: totalSteps,
+                selectedFormula: selectedFormula,
+                step1Formulas: step1Formulas
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `CNUCNM_Formula_Hierarchy_Step${currentStep}.json`;
+            link.click();
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            createHierarchy();
+            updateProgress();
+        });
+    </script>
+</body>
+</html>

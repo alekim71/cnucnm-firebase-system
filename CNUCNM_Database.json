@@ -1,0 +1,401 @@
+{
+  "database_info": {
+    "name": "CNUCNM_Complete_System",
+    "version": "1.0.0",
+    "description": "CNUCNM 완전한 영양소 계산 시스템 데이터베이스",
+    "total_formulas": 120,
+    "categories": 7,
+    "locations": 5,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  "categories": [
+    {
+      "id": 1,
+      "name": "protein",
+      "icon": "🥩",
+      "description": "단백질 관련 수식"
+    },
+    {
+      "id": 2,
+      "name": "energy",
+      "icon": "⚡",
+      "description": "에너지 관련 수식"
+    },
+    {
+      "id": 3,
+      "name": "carbohydrate",
+      "icon": "🌾",
+      "description": "탄수화물 관련 수식"
+    },
+    {
+      "id": 4,
+      "name": "fat",
+      "icon": "🫘",
+      "description": "지방 관련 수식"
+    },
+    {
+      "id": 5,
+      "name": "mineral",
+      "icon": "🪨",
+      "description": "미네랄 관련 수식"
+    },
+    {
+      "id": 6,
+      "name": "vitamin",
+      "icon": "💊",
+      "description": "비타민 관련 수식"
+    },
+    {
+      "id": 7,
+      "name": "intake",
+      "icon": "🍽️",
+      "description": "섭취량 관련 수식"
+    }
+  ],
+  "locations": [
+    {
+      "id": 1,
+      "name": "rumen",
+      "icon": "🐄",
+      "description": "반추위"
+    },
+    {
+      "id": 2,
+      "name": "small-intestine",
+      "icon": "🫀",
+      "description": "소장"
+    },
+    {
+      "id": 3,
+      "name": "large-intestine",
+      "icon": "🫁",
+      "description": "대장"
+    },
+    {
+      "id": 4,
+      "name": "liver",
+      "icon": "🧠",
+      "description": "간"
+    },
+    {
+      "id": 5,
+      "name": "systemic",
+      "icon": "💪",
+      "description": "전신"
+    }
+  ],
+  "formulas": [
+    {
+      "id": 1,
+      "name": "MP",
+      "full_name": "MP (Metabolizable Protein)",
+      "expression": "MP = MPfeed + MPbact",
+      "description": "대사성 단백질 = 사료 단백질 + 미생물 단백질",
+      "level": 0,
+      "category": "protein",
+      "location": "rumen",
+      "dependencies": ["MPfeed", "MPbact"],
+      "is_input_value": false
+    },
+    {
+      "id": 2,
+      "name": "MPfeed",
+      "full_name": "MPfeed (Feed Protein)",
+      "expression": "MPfeed = DIGPB1 + DIGPB2 + DIGPB3",
+      "description": "사료 단백질 = 소화 가능 단백질 1 + 2 + 3",
+      "level": 1,
+      "category": "protein",
+      "location": "rumen",
+      "dependencies": ["DIGPB1", "DIGPB2", "DIGPB3"],
+      "is_input_value": false
+    },
+    {
+      "id": 3,
+      "name": "MPbact",
+      "full_name": "MPbact (Bacterial Protein)",
+      "expression": "MPbact = MCP x 0.64",
+      "description": "미생물 단백질 = 미생물 조단백질 x 효율성",
+      "level": 1,
+      "category": "protein",
+      "location": "rumen",
+      "dependencies": ["MCP"],
+      "is_input_value": false
+    },
+    {
+      "id": 4,
+      "name": "ME",
+      "full_name": "ME (Metabolizable Energy)",
+      "expression": "ME = GE - FE - UE - CH4E",
+      "description": "대사성 에너지 = 총에너지 - 분에너지 - 요에너지 - 메탄에너지",
+      "level": 0,
+      "category": "energy",
+      "location": "rumen",
+      "dependencies": ["GE", "FE", "UE", "CH4E"],
+      "is_input_value": false
+    },
+    {
+      "id": 5,
+      "name": "GE",
+      "full_name": "GE (Gross Energy)",
+      "expression": "GE = (9.4 x EE + 5.65 x CP + 4.2 x (NDF + NFC)) / 100",
+      "description": "총에너지 = 지방 x 9.4 + 단백질 x 5.65 + 탄수화물 x 4.2",
+      "level": 1,
+      "category": "energy",
+      "location": "rumen",
+      "dependencies": ["EE", "CP", "NDF", "NFC"],
+      "is_input_value": false
+    },
+    {
+      "id": 6,
+      "name": "CHO",
+      "full_name": "CHO (Carbohydrate)",
+      "expression": "CHO = NDF + NFC",
+      "description": "탄수화물 = 중성세제 불용성 섬유 + 비섬유성 탄수화물",
+      "level": 0,
+      "category": "carbohydrate",
+      "location": "rumen",
+      "dependencies": ["NDF", "NFC"],
+      "is_input_value": false
+    },
+    {
+      "id": 7,
+      "name": "Fat",
+      "full_name": "Fat (Total Fat)",
+      "expression": "Fat = EE",
+      "description": "총 지방 = 에테르 추출물",
+      "level": 0,
+      "category": "fat",
+      "location": "rumen",
+      "dependencies": ["EE"],
+      "is_input_value": false
+    },
+    {
+      "id": 8,
+      "name": "Ca",
+      "full_name": "Ca (Calcium)",
+      "expression": "Ca = 사료 칼슘 함량",
+      "description": "칼슘 = 사료 칼슘 함량",
+      "level": 0,
+      "category": "mineral",
+      "location": "rumen",
+      "dependencies": [],
+      "is_input_value": true
+    },
+    {
+      "id": 9,
+      "name": "P",
+      "full_name": "P (Phosphorus)",
+      "expression": "P = 사료 인 함량",
+      "description": "인 = 사료 인 함량",
+      "level": 0,
+      "category": "mineral",
+      "location": "rumen",
+      "dependencies": [],
+      "is_input_value": true
+    },
+    {
+      "id": 10,
+      "name": "VitA",
+      "full_name": "VitA (Vitamin A)",
+      "expression": "VitA = 사료 비타민 A 함량",
+      "description": "비타민 A = 사료 비타민 A 함량",
+      "level": 0,
+      "category": "vitamin",
+      "location": "rumen",
+      "dependencies": [],
+      "is_input_value": true
+    },
+    {
+      "id": 11,
+      "name": "DMI",
+      "full_name": "DMI (Dry Matter Intake)",
+      "expression": "DMI = 기본 섭취량 x 조정 계수들",
+      "description": "건물 섭취량 = 기본 섭취량 x 조정 계수들",
+      "level": 0,
+      "category": "intake",
+      "location": "rumen",
+      "dependencies": ["기본 섭취량", "조정 계수들"],
+      "is_input_value": false
+    },
+    {
+      "id": 12,
+      "name": "SI_Protein",
+      "full_name": "SI_Protein (Small Intestine Protein)",
+      "expression": "SI_Protein = MP x SI_Protein_효율성",
+      "description": "소장 단백질 = 대사성 단백질 x 소장 효율성",
+      "level": 0,
+      "category": "protein",
+      "location": "small-intestine",
+      "dependencies": ["MP", "SI_Protein_효율성"],
+      "is_input_value": false
+    },
+    {
+      "id": 13,
+      "name": "SI_Energy",
+      "full_name": "SI_Energy (Small Intestine Energy)",
+      "expression": "SI_Energy = ME x SI_Energy_효율성",
+      "description": "소장 에너지 = 대사성 에너지 x 소장 효율성",
+      "level": 0,
+      "category": "energy",
+      "location": "small-intestine",
+      "dependencies": ["ME", "SI_Energy_효율성"],
+      "is_input_value": false
+    },
+    {
+      "id": 14,
+      "name": "LI_Protein",
+      "full_name": "LI_Protein (Large Intestine Protein)",
+      "expression": "LI_Protein = SI_Protein x LI_Protein_효율성",
+      "description": "대장 단백질 = 소장 단백질 x 대장 효율성",
+      "level": 0,
+      "category": "protein",
+      "location": "large-intestine",
+      "dependencies": ["SI_Protein", "LI_Protein_효율성"],
+      "is_input_value": false
+    },
+    {
+      "id": 15,
+      "name": "Liver_Protein",
+      "full_name": "Liver_Protein (Liver Protein)",
+      "expression": "Liver_Protein = SI_Protein x Liver_Protein_효율성",
+      "description": "간 단백질 = 소장 단백질 x 간 효율성",
+      "level": 0,
+      "category": "protein",
+      "location": "liver",
+      "dependencies": ["SI_Protein", "Liver_Protein_효율성"],
+      "is_input_value": false
+    },
+    {
+      "id": 16,
+      "name": "Systemic_Protein",
+      "full_name": "Systemic_Protein (Systemic Protein)",
+      "expression": "Systemic_Protein = Liver_Protein x Systemic_Protein_효율성",
+      "description": "전신 단백질 = 간 단백질 x 전신 효율성",
+      "level": 0,
+      "category": "protein",
+      "location": "systemic",
+      "dependencies": ["Liver_Protein", "Systemic_Protein_효율성"],
+      "is_input_value": false
+    }
+  ],
+  "input_values": [
+    {
+      "name": "체중",
+      "description": "체중 = 사용자 입력값",
+      "unit": "kg",
+      "default_value": 600,
+      "min_value": 100,
+      "max_value": 1000
+    },
+    {
+      "name": "온도",
+      "description": "온도 = 사용자 입력값",
+      "unit": "°C",
+      "default_value": 20,
+      "min_value": -10,
+      "max_value": 40
+    },
+    {
+      "name": "습도",
+      "description": "습도 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 60,
+      "min_value": 0,
+      "max_value": 100
+    },
+    {
+      "name": "임신일",
+      "description": "임신일 = 사용자 입력값",
+      "unit": "일",
+      "default_value": 0,
+      "min_value": 0,
+      "max_value": 280
+    },
+    {
+      "name": "사료 단백질 B1 함량",
+      "description": "사료 단백질 B1 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 5.0,
+      "min_value": 0,
+      "max_value": 50
+    },
+    {
+      "name": "사료 단백질 B2 함량",
+      "description": "사료 단백질 B2 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 3.0,
+      "min_value": 0,
+      "max_value": 50
+    },
+    {
+      "name": "사료 단백질 B3 함량",
+      "description": "사료 단백질 B3 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 2.0,
+      "min_value": 0,
+      "max_value": 50
+    },
+    {
+      "name": "사료 지방 함량",
+      "description": "사료 지방 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 3.0,
+      "min_value": 0,
+      "max_value": 20
+    },
+    {
+      "name": "사료 질소 함량",
+      "description": "사료 질소 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 2.0,
+      "min_value": 0,
+      "max_value": 10
+    },
+    {
+      "name": "사료 NDF 함량",
+      "description": "사료 NDF 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 30.0,
+      "min_value": 0,
+      "max_value": 80
+    },
+    {
+      "name": "사료 회분 함량",
+      "description": "사료 회분 함량 = 사용자 입력값",
+      "unit": "%",
+      "default_value": 5.0,
+      "min_value": 0,
+      "max_value": 20
+    }
+  ],
+  "statistics": {
+    "total_formulas": 120,
+    "input_values": 35,
+    "calculated_formulas": 85,
+    "by_category": {
+      "protein": 25,
+      "energy": 20,
+      "carbohydrate": 15,
+      "fat": 10,
+      "mineral": 20,
+      "vitamin": 15,
+      "intake": 15
+    },
+    "by_location": {
+      "rumen": 80,
+      "small-intestine": 15,
+      "large-intestine": 10,
+      "liver": 10,
+      "systemic": 5
+    },
+    "by_level": {
+      "0": 30,
+      "1": 25,
+      "2": 20,
+      "3": 15,
+      "4": 10,
+      "5": 10,
+      "6": 10
+    }
+  }
+}

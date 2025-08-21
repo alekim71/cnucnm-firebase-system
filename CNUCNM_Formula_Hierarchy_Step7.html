@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 수식 계층 구조 - 7단계: 깔끔한 한 줄 표시</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .progress-info {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .hierarchy-container {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .hierarchy-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .formula-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .formula-level {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+        }
+
+        .top-level {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+        }
+
+        .formula-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .formula-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            text-align: center;
+            margin: 5px;
+        }
+
+        .formula-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .formula-button.selected {
+            background: #28a745;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .formula-button.expanded {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .formula-button.has-children {
+            background: #17a2b8;
+        }
+
+        .formula-button.leaf {
+            background: #6c757d;
+        }
+
+        .formula-details {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .formula-details h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .selected-formula {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 20px;
+        }
+
+        .formula-name {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .formula-expression {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 10px;
+        }
+
+        .formula-description {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .control-group button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-group button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 CNUCNM 수식 계층 구조 - 7단계</h1>
+            <p>깔끔한 한 줄 표시: 최상위 수식들이 한 줄로 깔끔하게 표시됩니다!</p>
+        </div>
+
+        <div class="progress-info">
+            <h3>📊 작업 진행 상황</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 7%"></div>
+            </div>
+            <div class="progress-text" id="progress-text">7/100 단계 완료 (7%)</div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <button onclick="loadNextStep()">다음 단계 로드</button>
+                <button onclick="resetHierarchy()">계층 초기화</button>
+                <button onclick="exportCurrentData()">현재 데이터 내보내기</button>
+            </div>
+        </div>
+
+        <div class="hierarchy-container">
+            <div class="hierarchy-title">📁 수식 계층 구조 (깔끔한 한 줄 표시)</div>
+            <div class="formula-tree" id="formula-tree">
+                <!-- 계층 구조가 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+
+        <div class="formula-details">
+            <h3>📋 선택된 수식 상세 정보</h3>
+            <div id="selected-formula-details">
+                <div class="selected-formula">
+                    <div class="formula-name">수식을 선택해주세요</div>
+                    <div class="formula-expression">최상위 수식들을 한 줄로 깔끔하게 표시하고, 클릭하면 수식이 표시됩니다.</div>
+                    <div class="formula-description">MP, ME, DMI, FHP를 클릭하여 수식을 확인해보세요!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>데이터 로딩 중...</h3>
+        <p id="loading-text">수식 계층 구조를 생성하고 있습니다.</p>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentStep = 7;
+        const totalSteps = 100;
+        let selectedFormula = null;
+        let currentPath = [];
+        let currentLevel = 0;
+
+        // 7단계: 깔끔한 한 줄 표시 데이터베이스
+        const formulaDatabase = {
+            // Level 0: 최상위 수식들
+            "MP": {
+                name: "MP",
+                fullName: "MP (Metabolizable Protein)",
+                expression: "MP = MPfeed + MPbact",
+                description: "대사성 단백질 = 사료 단백질 + 미생물 단백질",
+                level: 0,
+                dependencies: ["MPfeed", "MPbact"],
+                category: "protein",
+                hasChildren: true
+            },
+            "ME": {
+                name: "ME",
+                fullName: "ME (Metabolizable Energy)",
+                expression: "ME = GE - FE - UE - CH4E",
+                description: "대사성 에너지 = 총에너지 - 분에너지 - 요에너지 - 메탄에너지",
+                level: 0,
+                dependencies: ["GE", "FE", "UE", "CH4E"],
+                category: "energy",
+                hasChildren: true
+            },
+            "DMI": {
+                name: "DMI",
+                fullName: "DMI (Dry Matter Intake)",
+                expression: "DMI = Body_weight × Intake_coefficient",
+                description: "건물 섭취량 = 체중 × 섭취 계수",
+                level: 0,
+                dependencies: ["Body_weight", "Intake_coefficient"],
+                category: "intake",
+                hasChildren: true
+            },
+            "FHP": {
+                name: "FHP",
+                fullName: "FHP (Fasting Heat Production)",
+                expression: "FHP = FHP_coefficient × (SBW^0.75)",
+                description: "절식 열생산 = FHP 계수 × (수축체중^0.75)",
+                level: 0,
+                dependencies: ["FHP_coefficient", "SBW"],
+                category: "energy",
+                hasChildren: true
+            },
+
+            // Level 1: MP 하위 수식들
+            "MPfeed": {
+                name: "MPfeed",
+                fullName: "MPfeed (Feed Protein)",
+                expression: "MPfeed = DIGPB1 + DIGPB2 + DIGPB3",
+                description: "사료 단백질 = 소화 가능 단백질 1 + 2 + 3",
+                level: 1,
+                dependencies: ["DIGPB1", "DIGPB2", "DIGPB3"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MP"
+            },
+            "MPbact": {
+                name: "MPbact",
+                fullName: "MPbact (Bacterial Protein)",
+                expression: "MPbact = MCP × 0.64",
+                description: "미생물 단백질 = 미생물 조단백질 × 효율성",
+                level: 1,
+                dependencies: ["MCP"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MP"
+            },
+
+            // Level 1: ME 하위 수식들
+            "GE": {
+                name: "GE",
+                fullName: "GE (Gross Energy)",
+                expression: "GE = Feed_intake × Energy_content",
+                description: "총에너지 = 사료 섭취량 × 에너지 함량",
+                level: 1,
+                dependencies: ["Feed_intake", "Energy_content"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "FE": {
+                name: "FE",
+                fullName: "FE (Fecal Energy)",
+                expression: "FE = Feed_intake × Fecal_loss_rate",
+                description: "분에너지 = 사료 섭취량 × 분 손실율",
+                level: 1,
+                dependencies: ["Feed_intake", "Fecal_loss_rate"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "UE": {
+                name: "UE",
+                fullName: "UE (Urinary Energy)",
+                expression: "UE = Protein_intake × Urinary_loss_rate",
+                description: "요에너지 = 단백질 섭취량 × 요 손실율",
+                level: 1,
+                dependencies: ["Protein_intake", "Urinary_loss_rate"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+            "CH4E": {
+                name: "CH4E",
+                fullName: "CH4E (Methane Energy)",
+                expression: "CH4E = Fermentable_carbs × Methane_factor",
+                description: "메탄에너지 = 발효 가능 탄수화물 × 메탄 계수",
+                level: 1,
+                dependencies: ["Fermentable_carbs", "Methane_factor"],
+                category: "energy",
+                hasChildren: true,
+                parent: "ME"
+            },
+
+            // Level 1: DMI 하위 수식들
+            "Body_weight": {
+                name: "Body_weight",
+                fullName: "Body_weight (체중)",
+                expression: "Body_weight = 현재 체중 또는 목표 체중",
+                description: "동물의 현재 체중 또는 목표 체중",
+                level: 1,
+                dependencies: [],
+                category: "input",
+                hasChildren: false,
+                parent: "DMI"
+            },
+            "Intake_coefficient": {
+                name: "Intake_coefficient",
+                fullName: "Intake_coefficient (섭취 계수)",
+                expression: "Intake_coefficient = 기본값 × 조정계수",
+                description: "건물 섭취량 계산을 위한 계수",
+                level: 1,
+                dependencies: ["Base_intake_coef", "Adjustment_factor"],
+                category: "coefficient",
+                hasChildren: true,
+                parent: "DMI"
+            },
+
+            // Level 1: FHP 하위 수식들
+            "FHP_coefficient": {
+                name: "FHP_coefficient",
+                fullName: "FHP_coefficient (FHP 계수)",
+                expression: "FHP_coefficient = 기본값 × 생리적 조정계수",
+                description: "절식 열생산 계산을 위한 기본 계수",
+                level: 1,
+                dependencies: ["Base_FHP_coef", "Physiological_factor"],
+                category: "coefficient",
+                hasChildren: true,
+                parent: "FHP"
+            },
+            "SBW": {
+                name: "SBW",
+                fullName: "SBW (Shrunk Body Weight)",
+                expression: "SBW = Body_weight × Shrink_factor",
+                description: "수축체중 = 체중 × 수축 계수",
+                level: 1,
+                dependencies: ["Body_weight", "Shrink_factor"],
+                category: "weight",
+                hasChildren: true,
+                parent: "FHP"
+            },
+
+            // Level 2: MPfeed 하위 수식들
+            "DIGPB1": {
+                name: "DIGPB1",
+                fullName: "DIGPB1 (Digestible Protein 1)",
+                expression: "DIGPB1 = ID_Protein_1 × adjREPB1",
+                description: "소화 가능 단백질 1 = 소장 단백질 1 × 조정된 반추위 효율성 1",
+                level: 2,
+                dependencies: ["ID_Protein_1", "adjREPB1"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MPfeed"
+            },
+            "DIGPB2": {
+                name: "DIGPB2",
+                fullName: "DIGPB2 (Digestible Protein 2)",
+                expression: "DIGPB2 = ID_Protein_2 × adjREPB2",
+                description: "소화 가능 단백질 2 = 소장 단백질 2 × 조정된 반추위 효율성 2",
+                level: 2,
+                dependencies: ["ID_Protein_2", "adjREPB2"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MPfeed"
+            },
+            "DIGPB3": {
+                name: "DIGPB3",
+                fullName: "DIGPB3 (Digestible Protein 3)",
+                expression: "DIGPB3 = ID_Protein_3 × adjREPB3",
+                description: "소화 가능 단백질 3 = 소장 단백질 3 × 조정된 반추위 효율성 3",
+                level: 2,
+                dependencies: ["ID_Protein_3", "adjREPB3"],
+                category: "protein",
+                hasChildren: true,
+                parent: "MPfeed"
+            },
+
+            // Level 2: GE 하위 수식들
+            "Feed_intake": {
+                name: "Feed_intake",
+                fullName: "Feed_intake (사료 섭취량)",
+                expression: "Feed_intake = DMI × Feed_moisture_factor",
+                description: "사료 섭취량 = 건물 섭취량 × 사료 수분 계수",
+                level: 2,
+                dependencies: ["DMI", "Feed_moisture_factor"],
+                category: "intake",
+                hasChildren: true,
+                parent: "GE"
+            },
+            "Energy_content": {
+                name: "Energy_content",
+                fullName: "Energy_content (에너지 함량)",
+                expression: "Energy_content = Protein_energy + Fat_energy + Carb_energy",
+                description: "에너지 함량 = 단백질 에너지 + 지방 에너지 + 탄수화물 에너지",
+                level: 2,
+                dependencies: ["Protein_energy", "Fat_energy", "Carb_energy"],
+                category: "energy",
+                hasChildren: true,
+                parent: "GE"
+            },
+
+            // Level 3: 기본 변수들 (리프 노드)
+            "ID_Protein_1": {
+                name: "ID_Protein_1",
+                fullName: "ID_Protein_1 (소장 도달 단백질 1)",
+                expression: "ID_Protein_1 = 기본값 또는 입력값",
+                description: "소장에 도달하는 단백질 1의 양",
+                level: 3,
+                dependencies: [],
+                category: "protein",
+                hasChildren: false,
+                parent: "DIGPB1"
+            },
+            "ID_Protein_2": {
+                name: "ID_Protein_2",
+                fullName: "ID_Protein_2 (소장 도달 단백질 2)",
+                expression: "ID_Protein_2 = 기본값 또는 입력값",
+                description: "소장에 도달하는 단백질 2의 양",
+                level: 3,
+                dependencies: [],
+                category: "protein",
+                hasChildren: false,
+                parent: "DIGPB2"
+            },
+            "ID_Protein_3": {
+                name: "ID_Protein_3",
+                fullName: "ID_Protein_3 (소장 도달 단백질 3)",
+                expression: "ID_Protein_3 = 기본값 또는 입력값",
+                description: "소장에 도달하는 단백질 3의 양",
+                level: 3,
+                dependencies: [],
+                category: "protein",
+                hasChildren: false,
+                parent: "DIGPB3"
+            },
+            "MCP": {
+                name: "MCP",
+                fullName: "MCP (Microbial Crude Protein)",
+                expression: "MCP = 기본값 또는 계산값",
+                description: "미생물 조단백질",
+                level: 3,
+                dependencies: [],
+                category: "protein",
+                hasChildren: false,
+                parent: "MPbact"
+            },
+            "Feed_moisture_factor": {
+                name: "Feed_moisture_factor",
+                fullName: "Feed_moisture_factor (사료 수분 계수)",
+                expression: "Feed_moisture_factor = 1 - 수분율",
+                description: "사료의 수분을 고려한 계수",
+                level: 3,
+                dependencies: [],
+                category: "coefficient",
+                hasChildren: false,
+                parent: "Feed_intake"
+            },
+            "Protein_energy": {
+                name: "Protein_energy",
+                fullName: "Protein_energy (단백질 에너지)",
+                expression: "Protein_energy = 단백질 함량 × 5.65 kcal/g",
+                description: "단백질에서 나오는 에너지",
+                level: 3,
+                dependencies: [],
+                category: "energy",
+                hasChildren: false,
+                parent: "Energy_content"
+            },
+            "Fat_energy": {
+                name: "Fat_energy",
+                fullName: "Fat_energy (지방 에너지)",
+                expression: "Fat_energy = 지방 함량 × 9.4 kcal/g",
+                description: "지방에서 나오는 에너지",
+                level: 3,
+                dependencies: [],
+                category: "energy",
+                hasChildren: false,
+                parent: "Energy_content"
+            },
+            "Carb_energy": {
+                name: "Carb_energy",
+                fullName: "Carb_energy (탄수화물 에너지)",
+                expression: "Carb_energy = 탄수화물 함량 × 4.15 kcal/g",
+                description: "탄수화물에서 나오는 에너지",
+                level: 3,
+                dependencies: [],
+                category: "energy",
+                hasChildren: false,
+                parent: "Energy_content"
+            }
+        };
+
+        // 계층 구조 생성
+        function createHierarchy() {
+            const treeContainer = document.getElementById('formula-tree');
+            treeContainer.innerHTML = '';
+
+            // Level 0만 먼저 표시 (한 줄로)
+            const level0Formulas = Object.keys(formulaDatabase).filter(key => 
+                formulaDatabase[key].level === 0
+            );
+
+            const level0 = document.createElement('div');
+            level0.className = 'top-level';
+            level0.innerHTML = '<h4>최상위 수식들</h4>';
+
+            level0Formulas.forEach(formulaKey => {
+                const formula = formulaDatabase[formulaKey];
+                const button = document.createElement('button');
+                button.className = 'formula-button has-children';
+                button.textContent = formula.name;
+                button.title = formula.fullName;
+                button.onclick = () => selectFormula(formulaKey, formula);
+                level0.appendChild(button);
+            });
+
+            treeContainer.appendChild(level0);
+        }
+
+        // 수식 선택 (수식 표시 + 변수 버튼)
+        function selectFormula(formulaKey, formula) {
+            selectedFormula = { key: formulaKey, ...formula };
+            
+            // 버튼 선택 상태 업데이트
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // 상세 정보 표시
+            displayFormulaDetails();
+
+            // 현재 경로 설정
+            currentPath = [formulaKey];
+            
+            // 계층 구조 다시 그리기 (수식 표시 + 변수 버튼)
+            renderFormulaWithVariables(formulaKey);
+        }
+
+        // 수식과 변수 버튼 렌더링
+        function renderFormulaWithVariables(rootKey) {
+            const treeContainer = document.getElementById('formula-tree');
+            treeContainer.innerHTML = '';
+
+            // Level 0 (루트) - 한 줄로
+            const level0 = document.createElement('div');
+            level0.className = 'top-level';
+            level0.innerHTML = '<h4>최상위 수식들</h4>';
+
+            const level0Formulas = Object.keys(formulaDatabase).filter(key => 
+                formulaDatabase[key].level === 0
+            );
+
+            level0Formulas.forEach(formulaKey => {
+                const formula = formulaDatabase[formulaKey];
+                const button = document.createElement('button');
+                button.className = 'formula-button has-children';
+                if (formulaKey === rootKey) {
+                    button.classList.add('selected');
+                }
+                button.textContent = formula.name;
+                button.title = formula.fullName;
+                button.onclick = () => selectFormula(formulaKey, formula);
+                level0.appendChild(button);
+            });
+
+            treeContainer.appendChild(level0);
+
+            // 선택된 수식의 수식 표시와 변수 버튼들
+            displayFormulaWithVariables(rootKey, 1);
+        }
+
+        // 수식 표시와 변수 버튼들
+        function displayFormulaWithVariables(parentKey, level) {
+            const parentFormula = formulaDatabase[parentKey];
+            const childFormulas = Object.keys(formulaDatabase).filter(key => {
+                const childFormula = formulaDatabase[key];
+                return childFormula.parent === parentKey;
+            });
+
+            if (childFormulas.length > 0) {
+                const treeContainer = document.getElementById('formula-tree');
+                const childLevel = document.createElement('div');
+                childLevel.className = 'formula-level';
+                childLevel.innerHTML = `<h4>Level ${level}: ${parentFormula.fullName}의 수식</h4>`;
+
+                // 수식 표시
+                const formulaDisplay = document.createElement('div');
+                formulaDisplay.className = 'formula-display';
+                formulaDisplay.textContent = parentFormula.expression;
+                childLevel.appendChild(formulaDisplay);
+
+                // 변수 버튼들
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.display = 'flex';
+                buttonContainer.style.flexWrap = 'wrap';
+                buttonContainer.style.justifyContent = 'center';
+                buttonContainer.style.gap = '10px';
+
+                childFormulas.forEach(formulaKey => {
+                    const formula = formulaDatabase[formulaKey];
+                    const button = document.createElement('button');
+                    button.className = 'formula-button';
+                    
+                    if (formula.hasChildren) {
+                        button.classList.add('has-children');
+                    } else {
+                        button.classList.add('leaf');
+                    }
+                    
+                    button.textContent = formula.name;
+                    button.title = formula.fullName;
+                    button.onclick = () => expandFormulaWithVariables(formulaKey, formula, level);
+                    buttonContainer.appendChild(button);
+                });
+
+                childLevel.appendChild(buttonContainer);
+                treeContainer.appendChild(childLevel);
+            }
+        }
+
+        // 수식 내 변수 확장
+        function expandFormulaWithVariables(formulaKey, formula, currentLevel) {
+            selectedFormula = { key: formulaKey, ...formula };
+            
+            // 버튼 선택 상태 업데이트
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            // 상세 정보 표시
+            displayFormulaDetails();
+
+            // 현재 경로에 추가
+            currentPath = currentPath.slice(0, currentLevel);
+            currentPath.push(formulaKey);
+
+            // 기존 하위 레벨들 제거 (현재 레벨 이후)
+            removeLevelsAfter(currentLevel);
+
+            // 새로운 수식과 변수 버튼 추가
+            displayFormulaWithVariables(formulaKey, currentLevel + 1);
+        }
+
+        // 현재 레벨 이후의 레벨들 제거
+        function removeLevelsAfter(level) {
+            const treeContainer = document.getElementById('formula-tree');
+            const levels = treeContainer.querySelectorAll('.formula-level');
+            
+            for (let i = levels.length - 1; i >= 0; i--) {
+                const levelElement = levels[i];
+                const levelTitle = levelElement.querySelector('h4');
+                if (levelTitle && levelTitle.textContent.includes(`Level ${level + 1}`)) {
+                    levelElement.remove();
+                }
+            }
+        }
+
+        // 수식 상세 정보 표시
+        function displayFormulaDetails() {
+            if (!selectedFormula) return;
+
+            const detailsContainer = document.getElementById('selected-formula-details');
+            detailsContainer.innerHTML = `
+                <div class="selected-formula">
+                    <div class="formula-name">${selectedFormula.fullName}</div>
+                    <div class="formula-expression">${selectedFormula.expression}</div>
+                    <div class="formula-description">${selectedFormula.description}</div>
+                    <div style="margin-top: 15px;">
+                        <strong>카테고리:</strong> ${selectedFormula.category}<br>
+                        <strong>레벨:</strong> ${selectedFormula.level}<br>
+                        <strong>의존성:</strong> ${selectedFormula.dependencies.join(', ') || '없음'}<br>
+                        <strong>상위 수식:</strong> ${selectedFormula.parent || '없음'}<br>
+                        <strong>하위 수식:</strong> ${selectedFormula.hasChildren ? '있음' : '없음'}<br>
+                        <strong>현재 경로:</strong> ${currentPath.join(' → ')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 다음 단계 로드
+        function loadNextStep() {
+            if (currentStep >= totalSteps) {
+                alert('모든 단계가 완료되었습니다!');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading-text').textContent = `${currentStep + 1}단계 로딩 중...`;
+
+            setTimeout(() => {
+                currentStep++;
+                updateProgress();
+                loadStepData(currentStep);
+                document.getElementById('loading').style.display = 'none';
+            }, 1000);
+        }
+
+        // 단계별 데이터 로드
+        function loadStepData(step) {
+            // 실제로는 각 단계마다 다른 수식들을 로드
+            // 현재는 예시로 단계 번호만 표시
+            const treeContainer = document.getElementById('formula-tree');
+            const stepInfo = document.createElement('div');
+            stepInfo.className = 'formula-level';
+            stepInfo.innerHTML = `<h4>Level ${step}: ${step}단계 수식들 (예시)</h4>`;
+            
+            // 예시 버튼들
+            for (let i = 1; i <= 5; i++) {
+                const button = document.createElement('button');
+                button.className = 'formula-button';
+                button.textContent = `수식_${step}_${i}`;
+                button.onclick = () => selectExampleFormula(step, i);
+                stepInfo.appendChild(button);
+            }
+
+            treeContainer.appendChild(stepInfo);
+        }
+
+        // 예시 수식 선택
+        function selectExampleFormula(step, index) {
+            selectedFormula = {
+                key: `formula_${step}_${index}`,
+                name: `수식_${step}_${index}`,
+                fullName: `수식_${step}_${index}`,
+                expression: `= 예시 수식 ${step}_${index}`,
+                description: `${step}단계 ${index}번째 예시 수식입니다.`,
+                level: step,
+                dependencies: [],
+                category: "example"
+            };
+
+            document.querySelectorAll('.formula-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+
+            displayFormulaDetails();
+        }
+
+        // 진행률 업데이트
+        function updateProgress() {
+            const percentage = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = 
+                `${currentStep}/${totalSteps} 단계 완료 (${percentage.toFixed(1)}%)`;
+        }
+
+        // 계층 초기화
+        function resetHierarchy() {
+            currentStep = 7;
+            selectedFormula = null;
+            currentPath = [];
+            updateProgress();
+            createHierarchy();
+            document.getElementById('selected-formula-details').innerHTML = `
+                <div class="selected-formula">
+                    <div class="formula-name">수식을 선택해주세요</div>
+                    <div class="formula-expression">최상위 수식들을 한 줄로 깔끔하게 표시하고, 클릭하면 수식이 표시됩니다.</div>
+                    <div class="formula-description">MP, ME, DMI, FHP를 클릭하여 수식을 확인해보세요!</div>
+                </div>
+            `;
+        }
+
+        // 현재 데이터 내보내기
+        function exportCurrentData() {
+            const data = {
+                currentStep: currentStep,
+                totalSteps: totalSteps,
+                selectedFormula: selectedFormula,
+                formulaDatabase: formulaDatabase,
+                currentPath: currentPath
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `CNUCNM_Formula_Hierarchy_Step${currentStep}.json`;
+            link.click();
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            createHierarchy();
+            updateProgress();
+        });
+    </script>
+</body>
+</html>

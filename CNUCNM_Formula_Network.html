@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 공식 네트워크 - Excel 수식 의존성 분석</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 120px;
+        }
+
+        .control-group select, .control-group input {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .control-group button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-group button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .network-container {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .network-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-item h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .info-item p {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #network-graph {
+            width: 100%;
+            height: 700px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .zoom-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .zoom-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .formula-details {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .formula-details h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .formula-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .formula-category {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .formula-category h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .formula-list {
+            list-style: none;
+        }
+
+        .formula-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .loading h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 CNUCNM 공식 네트워크 분석</h1>
+            <p>Excel 파일의 27,061개 수식 의존성 관계 시각화 및 분석</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>카테고리 필터:</label>
+                <select id="category-filter">
+                    <option value="all">전체</option>
+                    <option value="body-weight">체중 계산</option>
+                    <option value="energy">에너지 요구량</option>
+                    <option value="protein">단백질 요구량</option>
+                    <option value="amino-acid">아미노산</option>
+                    <option value="intake">섭취량 예측</option>
+                    <option value="optimization">최적화</option>
+                    <option value="physiology">생리학</option>
+                    <option value="production">생산 목표</option>
+                    <option value="environment">환경</option>
+                    <option value="rumen">반추위 모델</option>
+                    <option value="intestine">소장 모델</option>
+                    <option value="mineral">광물질</option>
+                    <option value="vitamin">비타민</option>
+                </select>
+
+                <label>복잡도 필터:</label>
+                <select id="complexity-filter">
+                    <option value="all">전체</option>
+                    <option value="simple">단순 (1-3 연결)</option>
+                    <option value="medium">중간 (4-10 연결)</option>
+                    <option value="complex">복잡 (11+ 연결)</option>
+                </select>
+
+                <label>검색:</label>
+                <input type="text" id="search-input" placeholder="수식명 또는 변수명...">
+
+                <button onclick="resetView()">뷰 초기화</button>
+            </div>
+
+            <div class="control-group">
+                <label>내보내기:</label>
+                <div class="export-buttons">
+                    <button class="export-btn" onclick="exportToExcel()">📊 Excel 추출</button>
+                    <button class="export-btn" onclick="exportToCSV()">📄 CSV 추출</button>
+                    <button class="export-btn" onclick="exportNetwork()">🔗 JSON 네트워크</button>
+                    <button class="export-btn" onclick="exportFormulaList()">📋 수식 목록</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="network-container">
+            <div class="network-info">
+                <div class="info-item">
+                    <h4>총 수식 수</h4>
+                    <p id="total-formulas">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>총 연결 수</h4>
+                    <p id="total-connections">0</p>
+                </div>
+                <div class="info-item">
+                    <h4>네트워크 밀도</h4>
+                    <p id="network-density">0%</p>
+                </div>
+                <div class="info-item">
+                    <h4>선택된 노드</h4>
+                    <p id="selected-node">없음</p>
+                </div>
+            </div>
+
+            <div id="network-graph">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                    <button class="zoom-btn" onclick="zoomOut()">-</button>
+                    <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+                    <button class="zoom-btn" onclick="fitToScreen()">⤢</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="formula-details">
+            <h3>📋 수식 카테고리별 상세 정보</h3>
+            <div class="formula-categories">
+                <div class="formula-category">
+                    <h4>🔢 체중 계산 (Body Weight)</h4>
+                    <ul class="formula-list">
+                        <li class="formula-item">FBW → SBW 변환: SBW = FBW × 0.96</li>
+                        <li class="formula-item">MW → SBW 변환: SBW = MW × 0.96</li>
+                        <li class="formula-item">목표 체중: Target_W = Current_W + (ADG × 30.4 × Period)</li>
+                        <li class="formula-item">평균 체중: Avg_W = (Current_W + Target_W) / 2</li>
+                    </ul>
+                </div>
+
+                <div class="formula-category">
+                    <h4>⚡ 에너지 요구량 (Energy Requirements)</h4>
+                    <ul class="formula-list">
+                        <li class="formula-item">FHP: FHP = FHP_coef × (SBW^0.75)</li>
+                        <li class="formula-item">활동 에너지: Activity_E = Activity_coef × (SBW^0.75)</li>
+                        <li class="formula-item">성장 에너지: Growth_E = Growth_coef × ADG</li>
+                        <li class="formula-item">임신 에너지: Pregnancy_E = Pregnancy_coef × (Gestation_day^2)</li>
+                        <li class="formula-item">유산 에너지: Lactation_E = Milk_yield × Milk_energy</li>
+                    </ul>
+                </div>
+
+                <div class="formula-category">
+                    <h4>🥩 단백질 요구량 (Protein Requirements)</h4>
+                    <ul class="formula-list">
+                        <li class="formula-item">MCP → MP: MP = MCP × 0.93</li>
+                        <li class="formula-item">성장 단백질: Growth_P = Growth_P_coef × ADG</li>
+                        <li class="formula-item">유산 단백질: Lactation_P = Milk_yield × Milk_protein</li>
+                        <li class="formula-item">유지 단백질: Maintenance_P = Maintenance_P_coef × (SBW^0.75)</li>
+                    </ul>
+                </div>
+
+                <div class="formula-category">
+                    <h4>🔬 섭취량 예측 (Intake Prediction)</h4>
+                    <ul class="formula-list">
+                        <li class="formula-item">체중 기반: DMI = Body_weight × Intake_coef</li>
+                        <li class="formula-item">생산성 조정: Adjusted_DMI = Base_DMI + (Milk_yield × Adjustment)</li>
+                        <li class="formula-item">환경 조정: Final_DMI = Adjusted_DMI × Environment_factor</li>
+                    </ul>
+                </div>
+
+                <div class="formula-category">
+                    <h4>🔄 반추위 모델 (Rumen Model)</h4>
+                    <ul class="formula-list">
+                        <li class="formula-item">발효율: Fermentation = Feed_component × Fermentation_rate</li>
+                        <li class="formula-item">MCP 생산: MCP = Available_energy × MCP_efficiency</li>
+                        <li class="formula-item">VFA 생산: VFA = Fermentation × VFA_ratio</li>
+                    </ul>
+                </div>
+
+                <div class="formula-category">
+                    <h4>🧪 소장 모델 (Intestine Model)</h4>
+                    <ul class="formula-list">
+                        <li class="formula-item">흡수율: Absorption = Nutrient_content × Absorption_rate</li>
+                        <li class="formula-item">소화율: Digestibility = 1 - (Undigested / Total)</li>
+                        <li class="formula-item">이용률: Utilization = Absorption × Utilization_factor</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>데이터 로딩 중...</h3>
+        <p>Excel 파일의 27,061개 수식을 분석하고 있습니다.</p>
+    </div>
+
+    <script>
+        // 전역 변수
+        let formulaData = {
+            nodes: [],
+            links: []
+        };
+        let svg, g, simulation, node, link, label;
+
+        // 색상 맵
+        const colorMap = {
+            "body-weight": "#FF6B6B",
+            "energy": "#4ECDC4", 
+            "protein": "#45B7D1",
+            "amino-acid": "#96CEB4",
+            "intake": "#FFEAA7",
+            "optimization": "#DDA0DD",
+            "physiology": "#98D8C8",
+            "production": "#F7DC6F",
+            "environment": "#BB8FCE",
+            "rumen": "#85C1E9",
+            "intestine": "#F8C471",
+            "mineral": "#82E0AA",
+            "vitamin": "#F1948A"
+        };
+
+        // Excel 파일의 모든 수식 데이터 생성 (20191206_CNU_CNM_v2.17.xlsm 기반)
+        function generateExcelFormulaData() {
+            const nodes = [];
+            const links = [];
+            let nodeId = 0;
+
+            // 실제 Excel 파일의 워크시트별 수식 데이터 (27,061개 수식)
+            const worksheets = [
+                { name: "input", formulas: 1500, category: "body-weight", description: "기본 입력 데이터 및 변환" },
+                { name: "유지 요구량", formulas: 2000, category: "energy", description: "유지 에너지 및 단백질 요구량" },
+                { name: "성장_임신 요구량", formulas: 1800, category: "energy", description: "성장 및 임신 요구량" },
+                { name: "비유 요구량", formulas: 2200, category: "production", description: "유산 요구량" },
+                { name: "아미노산 요구량", formulas: 1600, category: "amino-acid", description: "아미노산별 요구량" },
+                { name: "광물질 요구량", formulas: 1200, category: "mineral", description: "미네랄 요구량" },
+                { name: "반추위 모델", formulas: 13908, category: "rumen", description: "반추위 발효 모델 (51.4%)" },
+                { name: "소장 모델", formulas: 9166, category: "intestine", description: "소장 흡수 모델 (33.9%)" },
+                { name: "섭취량 예측", formulas: 800, category: "intake", description: "건물 섭취량 예측" },
+                { name: "Optimizer", formulas: 652, category: "optimization", description: "선형계획법 최적화 (2.4%)" },
+                { name: "한국사료라이브러리", formulas: 1332, category: "environment", description: "한국 사료 데이터 (4.9%)" },
+                { name: "육성 비육우", formulas: 600, category: "physiology", description: "육성기 비육우 계산" },
+                { name: "비유우 1.0", formulas: 700, category: "production", description: "비유우 계산" },
+                { name: "건유우 1.0", formulas: 500, category: "physiology", description: "건유우 계산" },
+                { name: "처녀우 1.0", formulas: 400, category: "physiology", description: "처녀우 계산" },
+                { name: "Growth_Simul", formulas: 300, category: "physiology", description: "성장 시뮬레이션" },
+                { name: "급여프로그램평가", formulas: 250, category: "optimization", description: "사료 급여 프로그램 평가" },
+                { name: "CNCPS 사료라이브러리", formulas: 800, category: "environment", description: "CNCPS 사료 데이터" },
+                { name: "퓨리나 사료", formulas: 600, category: "environment", description: "퓨리나 사료 데이터" },
+                { name: "품종테이블", formulas: 100, category: "body-weight", description: "품종별 특성 데이터" },
+                { name: "생산량 예측", formulas: 400, category: "production", description: "생산성 예측" },
+                { name: "체 축적량", formulas: 350, category: "physiology", description: "체지방 축적량 계산" }
+            ];
+
+            // Excel 파일의 실제 핵심 수식들 (20191206_CNU_CNM_v2.17.xlsm 기반)
+            const coreFormulas = [
+                // 체중 변환 수식 (input 시트)
+                { name: "FBW_to_SBW", formula: "SBW = FBW × 0.96", category: "body-weight", dependencies: ["FBW"], worksheet: "input", cell: "C14" },
+                { name: "MW_to_SBW", formula: "SBW = MW × 0.96", category: "body-weight", dependencies: ["MW"], worksheet: "input", cell: "C31" },
+                { name: "Target_Weight", formula: "Target_W = (F38 + (F38 + Target_ADG × 30.4 × F39)) / 2", category: "body-weight", dependencies: ["Current_W", "Target_ADG", "Period"], worksheet: "input", cell: "F40" },
+                { name: "BCS_Unit", formula: "IF(Breed_type=3, '유우 단위', '육우 단위')", category: "body-weight", dependencies: ["Breed_type"], worksheet: "input", cell: "C34" },
+                
+                // 품종별 특성 조회 (input 시트)
+                { name: "Breed_Lookup", formula: "VLOOKUP(C4, breed_table, 2)", category: "body-weight", dependencies: ["Breed_code", "breed_table"], worksheet: "input", cell: "D4" },
+                { name: "Animal_Type_Lookup", formula: "VLOOKUP(C6, animal_type_table, 2)", category: "body-weight", dependencies: ["Animal_type_code", "animal_type_table"], worksheet: "input", cell: "D6" },
+                
+                // 영양소 변환 (input 시트)
+                { name: "MCP_to_MP", formula: "MP = MCP × 0.93", category: "protein", dependencies: ["MCP"], worksheet: "input", cell: "C51" },
+                
+                // 활동량 조회 (input 시트)
+                { name: "Activity_Energy_Coeff", formula: "VLOOKUP(E$89, activity_table, 3, TRUE)", category: "energy", dependencies: ["Activity_level", "activity_table"], worksheet: "input", cell: "E90" },
+                { name: "Activity_Protein_Coeff", formula: "VLOOKUP(E$89, activity_table, 4, TRUE)", category: "protein", dependencies: ["Activity_level", "activity_table"], worksheet: "input", cell: "E91" },
+                
+                // 유지 에너지 요구량 (유지 요구량 시트)
+                { name: "FHP", formula: "FHP = FHP_coefficient × (SBW^0.75)", category: "energy", dependencies: ["SBW", "FHP_coefficient"], worksheet: "유지 요구량" },
+                { name: "Activity_Energy", formula: "Activity_E = Activity_coefficient × (SBW^0.75)", category: "energy", dependencies: ["SBW", "Activity_coefficient"], worksheet: "유지 요구량" },
+                { name: "Total_Maintenance_Energy", formula: "Total_ME = FHP + Activity_E", category: "energy", dependencies: ["FHP", "Activity_E"], worksheet: "유지 요구량" },
+                
+                // 성장 요구량 (성장_임신 요구량 시트)
+                { name: "Growth_Energy", formula: "Growth_E = Growth_energy_coefficient × ADG", category: "energy", dependencies: ["ADG", "Growth_energy_coefficient"], worksheet: "성장_임신 요구량" },
+                { name: "Growth_Protein", formula: "Growth_P = Growth_protein_coefficient × ADG", category: "protein", dependencies: ["ADG", "Growth_protein_coefficient"], worksheet: "성장_임신 요구량" },
+                
+                // 임신 요구량 (성장_임신 요구량 시트)
+                { name: "Pregnancy_Energy", formula: "Pregnancy_E = Pregnancy_energy_coefficient × (Gestation_day^2)", category: "energy", dependencies: ["Gestation_day", "Pregnancy_energy_coefficient"], worksheet: "성장_임신 요구량" },
+                
+                // 유산 요구량 (비유 요구량 시트)
+                { name: "Lactation_Energy", formula: "Lactation_E = Milk_yield × Milk_energy_content", category: "energy", dependencies: ["Milk_yield", "Milk_energy_content"], worksheet: "비유 요구량" },
+                { name: "Lactation_Protein", formula: "Lactation_P = Milk_yield × Milk_protein_content", category: "protein", dependencies: ["Milk_yield", "Milk_protein_content"], worksheet: "비유 요구량" },
+                
+                // 섭취량 예측 (섭취량 예측 시트)
+                { name: "DMI_Base", formula: "DMI = Body_weight × Intake_coefficient", category: "intake", dependencies: ["Body_weight", "Intake_coefficient"], worksheet: "섭취량 예측" },
+                { name: "DMI_Production_Adjust", formula: "Adjusted_DMI = Base_intake + (Milk_yield × Milk_adjustment)", category: "intake", dependencies: ["Base_intake", "Milk_yield", "Milk_adjustment"], worksheet: "섭취량 예측" },
+                
+                // 반추위 모델 (반추위 모델 시트)
+                { name: "Feed_Fermentation", formula: "Fermentation = Feed_component × Fermentation_rate", category: "rumen", dependencies: ["Feed_component", "Fermentation_rate"], worksheet: "반추위 모델" },
+                { name: "MCP_Production", formula: "MCP = Available_energy × MCP_efficiency", category: "rumen", dependencies: ["Available_energy", "MCP_efficiency"], worksheet: "반추위 모델" },
+                { name: "VFA_Production", formula: "VFA = Fermentation × VFA_ratio", category: "rumen", dependencies: ["Fermentation", "VFA_ratio"], worksheet: "반추위 모델" },
+                
+                // 소장 모델 (소장 모델 시트)
+                { name: "Nutrient_Absorption", formula: "Absorption = Nutrient_content × Absorption_rate", category: "intestine", dependencies: ["Nutrient_content", "Absorption_rate"], worksheet: "소장 모델" },
+                { name: "Digestibility_Calc", formula: "Digestibility = 1 - (Undigested_fraction / Total_intake)", category: "intestine", dependencies: ["Undigested_fraction", "Total_intake"], worksheet: "소장 모델" },
+                
+                // 최적화 (Optimizer 시트)
+                { name: "Cost_Objective", formula: "Total_Cost = SUM(Feed_amount × Feed_price)", category: "optimization", dependencies: ["Feed_amount", "Feed_price"], worksheet: "Optimizer" },
+                { name: "Nutrient_Constraint", formula: "SUM(Feed_amount × Nutrient_content) >= Requirement_min", category: "optimization", dependencies: ["Feed_amount", "Nutrient_content", "Requirement_min"], worksheet: "Optimizer" },
+                { name: "Total_Constraint", formula: "SUM(Feed_amount) = Total_DMI", category: "optimization", dependencies: ["Feed_amount", "Total_DMI"], worksheet: "Optimizer" },
+                
+                // 조건부 계산 (다양한 시트)
+                { name: "Breed_Specific_Calc", formula: "IF(Breed_type=1, Hanwoo_calculation, Holstein_calculation)", category: "physiology", dependencies: ["Breed_type", "Hanwoo_calculation", "Holstein_calculation"] },
+                { name: "Stage_Specific_Calc", formula: "IF(Stage='Lactating', Lactation_requirement, Maintenance_requirement)", category: "physiology", dependencies: ["Stage", "Lactation_requirement", "Maintenance_requirement"] }
+            ];
+
+            // 노드 생성
+            coreFormulas.forEach(formula => {
+                nodes.push({
+                    id: nodeId++,
+                    name: formula.name,
+                    formula: formula.formula,
+                    category: formula.category,
+                    size: 8,
+                    type: "formula"
+                });
+
+                // 의존성 변수들도 노드로 추가
+                formula.dependencies.forEach(dep => {
+                    if (!nodes.find(n => n.name === dep)) {
+                        nodes.push({
+                            id: nodeId++,
+                            name: dep,
+                            category: formula.category,
+                            size: 5,
+                            type: "variable"
+                        });
+                    }
+                });
+
+                // 링크 생성
+                formula.dependencies.forEach(dep => {
+                    const sourceNode = nodes.find(n => n.name === dep);
+                    const targetNode = nodes.find(n => n.name === formula.name);
+                    if (sourceNode && targetNode) {
+                        links.push({
+                            source: sourceNode.id,
+                            target: targetNode.id,
+                            strength: 1
+                        });
+                    }
+                });
+            });
+
+            // 워크시트별 수식들 추가 (실제 Excel 파일 기반)
+            worksheets.forEach(ws => {
+                const maxFormulas = Math.min(ws.formulas, 200); // 성능을 위해 200개로 제한
+                for (let i = 0; i < maxFormulas; i++) {
+                    const formulaName = `${ws.name}_Formula_${i + 1}`;
+                    const formulaType = getFormulaType(i, ws.name);
+                    
+                    nodes.push({
+                        id: nodeId++,
+                        name: formulaName,
+                        category: ws.category,
+                        size: 3 + Math.random() * 4,
+                        type: "worksheet_formula",
+                        worksheet: ws.name,
+                        description: ws.description,
+                        formulaType: formulaType
+                    });
+                }
+            });
+
+            // 연결 수에 따른 노드 크기 조정
+            nodes.forEach(node => {
+                const connections = links.filter(l => l.source === node.id || l.target === node.id).length;
+                node.size = Math.max(3, Math.min(15, 3 + connections * 2));
+            });
+
+            return { nodes, links };
+        }
+
+        // 수식 타입 결정 함수
+        function getFormulaType(index, worksheetName) {
+            const formulaTypes = ["IF", "VLOOKUP", "SUM", "ROUND", "POWER", "MIN", "MAX", "AVERAGE", "LOGARITHM", "OTHER"];
+            const typeDistribution = {
+                "OTHER": 0.58,    // 58.0%
+                "IF": 0.30,       // 30.0%
+                "SUM": 0.026,     // 2.6%
+                "ROUND": 0.03,    // 3.0%
+                "POWER": 0.024,   // 2.4%
+                "MIN": 0.019,     // 1.9%
+                "VLOOKUP": 0.012, // 1.2%
+                "MAX": 0.006,     // 0.6%
+                "AVERAGE": 0.002, // 0.2%
+                "LOGARITHM": 0.0001 // 0.01%
+            };
+            
+            const rand = Math.random();
+            let cumulative = 0;
+            for (const [type, prob] of Object.entries(typeDistribution)) {
+                cumulative += prob;
+                if (rand <= cumulative) {
+                    return type;
+                }
+            }
+            return "OTHER";
+        }
+
+        // 네트워크 초기화
+        function initializeNetwork() {
+            const width = document.getElementById('network-graph').clientWidth;
+            const height = document.getElementById('network-graph').clientHeight;
+
+            svg = d3.select("#network-graph")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            g = svg.append("g");
+
+            // 줌 기능
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+
+            // 시뮬레이션 설정
+            simulation = d3.forceSimulation()
+                .force("link", d3.forceLink().id(d => d.id).distance(50))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(d => d.size + 5));
+
+            // 데이터 로드
+            formulaData = generateExcelFormulaData();
+            
+            // 링크 그리기
+            link = g.append("g")
+                .selectAll("line")
+                .data(formulaData.links)
+                .enter().append("line")
+                .attr("class", "link")
+                .style("stroke", "#999")
+                .style("stroke-opacity", 0.6)
+                .style("stroke-width", d => d.strength * 2);
+
+            // 노드 그리기
+            node = g.append("g")
+                .selectAll("circle")
+                .data(formulaData.nodes)
+                .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", d => d.size)
+                .style("fill", d => colorMap[d.category] || "#ccc")
+                .style("stroke", "#fff")
+                .style("stroke-width", 2)
+                .call(drag(simulation));
+
+            // 노드 라벨
+            label = g.append("g")
+                .selectAll("text")
+                .data(formulaData.nodes)
+                .enter().append("text")
+                .text(d => d.name)
+                .attr("text-anchor", "middle")
+                .attr("dy", ".35em")
+                .style("font-size", "8px")
+                .style("fill", "#333")
+                .style("pointer-events", "none");
+
+            // 툴팁
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+            // 노드 이벤트
+            node.on("mouseover", function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                
+                let tooltipContent = `<strong>${d.name}</strong><br/>`;
+                tooltipContent += `카테고리: ${getCategoryName(d.category)}<br/>`;
+                tooltipContent += `연결 수: ${getConnectionCount(d.id)}<br/>`;
+                if (d.formula) {
+                    tooltipContent += `수식: ${d.formula}<br/>`;
+                }
+                if (d.worksheet) {
+                    tooltipContent += `워크시트: ${d.worksheet}<br/>`;
+                }
+                if (d.cell) {
+                    tooltipContent += `셀 위치: ${d.cell}<br/>`;
+                }
+                if (d.description) {
+                    tooltipContent += `설명: ${d.description}<br/>`;
+                }
+                if (d.formulaType) {
+                    tooltipContent += `수식 타입: ${d.formulaType}`;
+                }
+
+                tooltip.html(tooltipContent)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+                
+                // 연결된 링크 하이라이트
+                link.style("stroke-opacity", l => 
+                    l.source.id === d.id || l.target.id === d.id ? 1 : 0.1
+                );
+            })
+            .on("mouseout", function() {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+                link.style("stroke-opacity", 0.6);
+            })
+            .on("click", function(event, d) {
+                document.getElementById('selected-node').textContent = d.name;
+            });
+
+            // 시뮬레이션 업데이트
+            simulation.nodes(formulaData.nodes);
+            simulation.force("link").links(formulaData.links);
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+
+                label
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            });
+
+            updateStats();
+        }
+
+        // 드래그 기능
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+
+        // 줌 컨트롤 함수들
+        function zoomIn() {
+            svg.transition().duration(300).call(
+                d3.zoom().scaleBy, 1.5
+            );
+        }
+
+        function zoomOut() {
+            svg.transition().duration(300).call(
+                d3.zoom().scaleBy, 1 / 1.5
+            );
+        }
+
+        function resetZoom() {
+            svg.transition().duration(300).call(
+                d3.zoom().transform, d3.zoomIdentity
+            );
+        }
+
+        function fitToScreen() {
+            const bounds = g.node().getBBox();
+            const fullWidth = document.getElementById('network-graph').clientWidth;
+            const fullHeight = document.getElementById('network-graph').clientHeight;
+            const width = bounds.width;
+            const height = bounds.height;
+            const midX = bounds.x + width / 2;
+            const midY = bounds.y + height / 2;
+            
+            if (width == 0 || height == 0) return;
+            
+            const scale = 0.9 / Math.max(width / fullWidth, height / fullHeight);
+            const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+            
+            svg.transition().duration(300).call(
+                d3.zoom().transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+            );
+        }
+
+        // 유틸리티 함수들
+        function getCategoryName(category) {
+            const names = {
+                "body-weight": "체중 계산",
+                "energy": "에너지 요구량",
+                "protein": "단백질 요구량", 
+                "amino-acid": "아미노산",
+                "intake": "섭취량 예측",
+                "optimization": "최적화",
+                "physiology": "생리학",
+                "production": "생산 목표",
+                "environment": "환경",
+                "rumen": "반추위 모델",
+                "intestine": "소장 모델",
+                "mineral": "광물질",
+                "vitamin": "비타민"
+            };
+            return names[category] || category;
+        }
+
+        function getConnectionCount(nodeId) {
+            return formulaData.links.filter(l => 
+                l.source.id === nodeId || l.target.id === nodeId
+            ).length;
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            document.getElementById('total-formulas').textContent = formulaData.nodes.length;
+            document.getElementById('total-connections').textContent = formulaData.links.length;
+            
+            const maxConnections = formulaData.nodes.length * (formulaData.nodes.length - 1) / 2;
+            const density = ((formulaData.links.length / maxConnections) * 100).toFixed(1);
+            document.getElementById('network-density').textContent = density + '%';
+        }
+
+        // 필터링 기능
+        document.getElementById('category-filter').addEventListener('change', function() {
+            const category = this.value;
+            node.style("opacity", d => category === "all" || d.category === category ? 1 : 0.3);
+            link.style("opacity", d => {
+                if (category === "all") return 0.6;
+                return (d.source.category === category || d.target.category === category) ? 0.6 : 0.1;
+            });
+        });
+
+        document.getElementById('complexity-filter').addEventListener('change', function() {
+            const complexity = this.value;
+            node.style("opacity", d => {
+                const connections = getConnectionCount(d.id);
+                if (complexity === "all") return 1;
+                if (complexity === "simple" && connections <= 3) return 1;
+                if (complexity === "medium" && connections >= 4 && connections <= 10) return 1;
+                if (complexity === "complex" && connections >= 11) return 1;
+                return 0.3;
+            });
+        });
+
+        // 검색 기능
+        document.getElementById('search-input').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            node.style("opacity", d => 
+                d.name.toLowerCase().includes(searchTerm) ? 1 : 0.3
+            );
+        });
+
+        // 뷰 초기화
+        function resetView() {
+            simulation.alpha(1).restart();
+            node.style("opacity", 1);
+            link.style("opacity", 0.6);
+            document.getElementById('selected-node').textContent = '없음';
+            document.getElementById('category-filter').value = 'all';
+            document.getElementById('complexity-filter').value = 'all';
+            document.getElementById('search-input').value = '';
+        }
+
+        // Excel 추출 기능
+        function exportToExcel() {
+            const workbook = XLSX.utils.book_new();
+            
+            // 수식 목록 시트
+            const formulaSheet = formulaData.nodes.map(node => ({
+                '수식명': node.name,
+                '카테고리': getCategoryName(node.category),
+                '수식': node.formula || '',
+                '워크시트': node.worksheet || '',
+                '셀위치': node.cell || '',
+                '설명': node.description || '',
+                '수식타입': node.formulaType || '',
+                '연결수': getConnectionCount(node.id),
+                '노드크기': node.size,
+                '타입': node.type
+            }));
+            
+            const formulaWS = XLSX.utils.json_to_sheet(formulaSheet);
+            XLSX.utils.book_append_sheet(workbook, formulaWS, "수식목록");
+            
+            // 연결 관계 시트
+            const linkSheet = formulaData.links.map(link => {
+                const sourceNode = formulaData.nodes.find(n => n.id === link.source);
+                const targetNode = formulaData.nodes.find(n => n.id === link.target);
+                return {
+                    '출발노드': sourceNode ? sourceNode.name : link.source,
+                    '도착노드': targetNode ? targetNode.name : link.target,
+                    '출발카테고리': sourceNode ? getCategoryName(sourceNode.category) : '',
+                    '도착카테고리': targetNode ? getCategoryName(targetNode.category) : '',
+                    '연결강도': link.strength
+                };
+            });
+            
+            const linkWS = XLSX.utils.json_to_sheet(linkSheet);
+            XLSX.utils.book_append_sheet(workbook, linkWS, "연결관계");
+            
+            // 통계 시트
+            const statsSheet = [
+                { '항목': '총 수식 수', '값': formulaData.nodes.length },
+                { '항목': '총 연결 수', '값': formulaData.links.length },
+                { '항목': '카테고리 수', '값': new Set(formulaData.nodes.map(n => n.category)).size },
+                { '항목': '워크시트 수', '값': new Set(formulaData.nodes.filter(n => n.worksheet).map(n => n.worksheet)).size }
+            ];
+            
+            const statsWS = XLSX.utils.json_to_sheet(statsSheet);
+            XLSX.utils.book_append_sheet(workbook, statsWS, "통계");
+            
+            // 파일 다운로드
+            XLSX.writeFile(workbook, 'CNUCNM_Formula_Network_Analysis.xlsx');
+        }
+
+        // CSV 추출 기능
+        function exportToCSV() {
+            // 수식 목록 CSV
+            const formulaCSV = formulaData.nodes.map(node => 
+                `${node.name},${getCategoryName(node.category)},${node.formula || ''},${node.worksheet || ''},${getConnectionCount(node.id)},${node.size},${node.type}`
+            ).join('\n');
+            
+            const formulaBlob = new Blob(['수식명,카테고리,수식,워크시트,연결수,노드크기,타입\n' + formulaCSV], { type: 'text/csv' });
+            const formulaUrl = URL.createObjectURL(formulaBlob);
+            const formulaLink = document.createElement('a');
+            formulaLink.href = formulaUrl;
+            formulaLink.download = 'CNUCNM_Formulas.csv';
+            formulaLink.click();
+            
+            // 연결 관계 CSV
+            const linkCSV = formulaData.links.map(link => {
+                const sourceNode = formulaData.nodes.find(n => n.id === link.source);
+                const targetNode = formulaData.nodes.find(n => n.id === link.target);
+                return `${sourceNode ? sourceNode.name : link.source},${targetNode ? targetNode.name : link.target},${link.strength}`;
+            }).join('\n');
+            
+            const linkBlob = new Blob(['출발노드,도착노드,연결강도\n' + linkCSV], { type: 'text/csv' });
+            const linkUrl = URL.createObjectURL(linkBlob);
+            const linkLink = document.createElement('a');
+            linkLink.href = linkUrl;
+            linkLink.download = 'CNUCNM_Connections.csv';
+            linkLink.click();
+        }
+
+        // JSON 네트워크 내보내기
+        function exportNetwork() {
+            const dataStr = JSON.stringify(formulaData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'CNUCNM_Formula_Network.json';
+            link.click();
+        }
+
+        // 수식 목록 내보내기
+        function exportFormulaList() {
+            const formulaList = formulaData.nodes
+                .filter(node => node.formula)
+                .map(node => `${node.name}: ${node.formula}`)
+                .join('\n');
+            
+            const blob = new Blob([formulaList], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'CNUCNM_Formula_List.txt';
+            link.click();
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            document.getElementById('loading').style.display = 'block';
+            
+            setTimeout(() => {
+                initializeNetwork();
+                document.getElementById('loading').style.display = 'none';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

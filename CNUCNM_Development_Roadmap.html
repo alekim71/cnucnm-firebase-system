@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNUCNM 개발 로드맵</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .roadmap-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #667eea;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -22px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+
+        .timeline-date {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .timeline-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .timeline-description {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .timeline-tasks {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .timeline-tasks li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .timeline-tasks li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .priority-high {
+            border-left-color: #dc3545;
+        }
+
+        .priority-high::before {
+            background: #dc3545;
+        }
+
+        .priority-medium {
+            border-left-color: #ffc107;
+        }
+
+        .priority-medium::before {
+            background: #ffc107;
+        }
+
+        .priority-low {
+            border-left-color: #28a745;
+        }
+
+        .priority-low::before {
+            background: #28a745;
+        }
+
+        .milestone {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-left-color: white;
+        }
+
+        .milestone::before {
+            background: white;
+            border: 3px solid #667eea;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .status-in-progress {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .status-pending {
+            background: #f8f9fa;
+            border-left-color: #6c757d;
+        }
+
+        .team-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .team-member {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .team-member h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .team-member p {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tech-tag {
+            background: #667eea;
+            color: white;
+        }
+
+        /* AI 능력 스타일 */
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .highlight-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .ai-capabilities {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .capability {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .capability h4 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .capability p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* 비교 그리드 스타일 */
+        .info-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .comparison-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .comparison-item h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .comparison-item ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-item li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .comparison-item li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .comparison-item li:last-child {
+            border-bottom: none;
+        }
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .timeline {
+                padding-left: 20px;
+            }
+            
+            .timeline-item {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 CNUCNM 개발 로드맵</h1>
+            <p>R Shiny에서 Python 마이크로서비스로의 전환 계획</p>
+            <a href="CNUCNM_Documentation.html" class="back-btn">← 메인 문서로 돌아가기</a>
+        </div>
+
+        <!-- 3일 긴급 로드맵 -->
+        <div class="roadmap-section">
+                            <h2 class="section-title">⚡ 3일 긴급 개발 로드맵</h2>
+                
+                <div class="highlight-box">
+                    <h3>🚀 Cursor AI 기반 3일 개발 가능성</h3>
+                    <p><strong>Cursor AI의 강력한 코드 생성 능력을 활용한 고속 개발 전략</strong></p>
+                    <div class="ai-capabilities">
+                        <div class="capability">
+                            <h4>💡 AI 코드 생성</h4>
+                            <p>기존 R 코드를 Python으로 자동 변환</p>
+                        </div>
+                        <div class="capability">
+                            <h4>🔧 마이크로서비스 아키텍처</h4>
+                            <p>FastAPI 기반 서비스 자동 생성</p>
+                        </div>
+                        <div class="capability">
+                            <h4>🎯 핵심 기능 우선순위</h4>
+                            <p>MVP (Minimum Viable Product) 중심 개발</p>
+                        </div>
+                        <div class="capability">
+                            <h4>⚡ 실시간 협업</h4>
+                            <p>AI와 개발자의 동시 작업</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline">
+                <div class="timeline-item priority-high status-in-progress">
+                    <div class="timeline-date">Day 1 (오늘)</div>
+                    <div class="timeline-title">프로젝트 초기 설정 및 아키텍처 설계</div>
+                    <div class="timeline-description">기본 인프라 구축 및 개발 환경 설정</div>
+                    <ul class="timeline-tasks">
+                        <li>GitHub 저장소 생성 및 팀 구성</li>
+                        <li>Docker 환경 설정 및 기본 컨테이너 구성</li>
+                        <li>PostgreSQL, MongoDB, Redis 데이터베이스 설정</li>
+                        <li>기본 마이크로서비스 아키텍처 설계 완료</li>
+                        <li>CI/CD 파이프라인 구축 (GitHub Actions)</li>
+                    </ul>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 20%"></div>
+                    </div>
+                </div>
+
+                <div class="timeline-item priority-high status-pending">
+                    <div class="timeline-date">Day 2 (내일)</div>
+                    <div class="timeline-title">핵심 마이크로서비스 개발 시작</div>
+                    <div class="timeline-description">가장 중요한 서비스들부터 개발 시작</div>
+                    <ul class="timeline-tasks">
+                        <li>User Management 서비스 개발 (FastAPI)</li>
+                        <li>Animal Management 서비스 개발</li>
+                        <li>Feed Library 서비스 개발</li>
+                        <li>기본 API Gateway 설정 (Kong)</li>
+                        <li>인증/인가 시스템 구현 (JWT)</li>
+                    </ul>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="timeline-item priority-high status-pending">
+                    <div class="timeline-date">Day 3 (3일째)</div>
+                    <div class="timeline-title">계산 엔진 및 최적화 모듈 개발</div>
+                    <div class="timeline-description">CNUCNM의 핵심 계산 로직 구현</div>
+                    <ul class="timeline-tasks">
+                        <li>Nutrition Requirements 서비스 개발</li>
+                        <li>Feed Formulation 서비스 개발 (PuLP/OR-Tools)</li>
+                        <li>기본 선형계획법 알고리즘 구현</li>
+                        <li>R 코드에서 Python으로 핵심 계산식 변환</li>
+                        <li>기본 웹 인터페이스 프로토타입 개발</li>
+                    </ul>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10개월 전체 로드맵 -->
+        <div class="roadmap-section">
+                            <h2 class="section-title">📅 10개월 전체 개발 로드맵</h2>
+                
+                <div class="info-box">
+                    <h3>🤖 Cursor AI vs 전통적 개발 방식 비교</h3>
+                    <div class="comparison-grid">
+                        <div class="comparison-item">
+                            <h4>🚀 Cursor AI 방식 (3일)</h4>
+                            <ul>
+                                <li>AI 코드 생성으로 즉시 개발</li>
+                                <li>기존 R 코드 자동 Python 변환</li>
+                                <li>마이크로서비스 아키텍처 자동 생성</li>
+                                <li>실시간 AI-개발자 협업</li>
+                                <li>MVP 중심의 빠른 프로토타입</li>
+                            </ul>
+                        </div>
+                        <div class="comparison-item">
+                            <h4>👥 전통적 개발 방식 (10개월)</h4>
+                            <ul>
+                                <li>수동 코드 작성 및 테스트</li>
+                                <li>단계별 개발 및 검증</li>
+                                <li>팀 협업 및 코드 리뷰</li>
+                                <li>완전한 기능 구현</li>
+                                <li>엔터프라이즈급 안정성 확보</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline">
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">Month 1-2: 기반 구축</div>
+                    <div class="timeline-title">인프라 및 기본 서비스 구축</div>
+                    <div class="timeline-description">클라우드 인프라 구축 및 기본 마이크로서비스 개발</div>
+                    <ul class="timeline-tasks">
+                        <li>클라우드 인프라 구축 (AWS/Azure/GCP)</li>
+                        <li>Kubernetes 클러스터 설정</li>
+                        <li>모니터링 시스템 구축 (Prometheus, Grafana)</li>
+                        <li>기본 마이크로서비스 5개 개발</li>
+                        <li>데이터베이스 마이그레이션 계획 수립</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item status-pending">
+                    <div class="timeline-date">Month 3-4: 핵심 기능 개발</div>
+                    <div class="timeline-title">CNUCNM 핵심 계산 엔진 개발</div>
+                    <div class="timeline-description">영양 요구량 계산, 사료 배합 최적화 등 핵심 기능 구현</div>
+                    <ul class="timeline-tasks">
+                        <li>Nutrition Requirements 서비스 완성</li>
+                        <li>Feed Formulation 서비스 완성</li>
+                        <li>선형계획법 최적화 알고리즘 구현</li>
+                        <li>R 코드 완전 변환</li>
+                        <li>API 테스트 및 성능 최적화</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item status-pending">
+                    <div class="timeline-date">Month 5-6: 고급 기능 및 분석</div>
+                    <div class="timeline-title">고급 분석 기능 및 모델링</div>
+                    <div class="timeline-description">머신러닝 모델, 예측 기능, 고급 분석 도구 개발</div>
+                    <ul class="timeline-tasks">
+                        <li>Intake Prediction 서비스 개발</li>
+                        <li>Data Analytics 서비스 개발</li>
+                        <li>머신러닝 모델 구현 (Scikit-learn)</li>
+                        <li>실시간 데이터 처리 시스템 구축</li>
+                        <li>보고서 생성 시스템 개발</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item status-pending">
+                    <div class="timeline-date">Month 7-8: 프론트엔드 및 모바일</div>
+                    <div class="timeline-title">사용자 인터페이스 개발</div>
+                    <div class="timeline-description">웹 애플리케이션 및 모바일 앱 개발</div>
+                    <ul class="timeline-tasks">
+                        <li>React 웹 애플리케이션 개발</li>
+                        <li>React Native 모바일 앱 개발</li>
+                        <li>사용자 인터페이스 디자인 및 구현</li>
+                        <li>반응형 웹 디자인 적용</li>
+                        <li>사용자 경험 최적화</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item status-pending">
+                    <div class="timeline-date">Month 9: 통합 및 테스트</div>
+                    <div class="timeline-title">시스템 통합 및 종합 테스트</div>
+                    <div class="timeline-description">모든 서비스 통합 및 품질 보증</div>
+                    <ul class="timeline-tasks">
+                        <li>전체 시스템 통합 테스트</li>
+                        <li>성능 테스트 및 최적화</li>
+                        <li>보안 테스트 및 취약점 점검</li>
+                        <li>사용자 수용 테스트</li>
+                        <li>문서화 및 사용자 매뉴얼 작성</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">Month 10: 배포 및 런칭</div>
+                    <div class="timeline-title">프로덕션 배포 및 시스템 런칭</div>
+                    <div class="timeline-description">최종 배포 및 사용자 교육</div>
+                    <ul class="timeline-tasks">
+                        <li>프로덕션 환경 배포</li>
+                        <li>데이터 마이그레이션 완료</li>
+                        <li>사용자 교육 및 워크샵 진행</li>
+                        <li>시스템 모니터링 및 유지보수 시작</li>
+                        <li>공식 런칭 및 마케팅 활동</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 기술 스택 및 팀 구성 -->
+        <div class="roadmap-section">
+            <h2 class="section-title">👥 개발 팀 구성 및 기술 스택</h2>
+            <div class="team-section">
+                <div class="team-member">
+                    <h4>프로젝트 매니저</h4>
+                    <p>전체 프로젝트 관리 및 일정 조율</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Agile</span>
+                        <span class="tech-tag">Scrum</span>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <h4>백엔드 개발자 (2명)</h4>
+                    <p>Python 마이크로서비스 개발</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">FastAPI</span>
+                        <span class="tech-tag">PostgreSQL</span>
+                        <span class="tech-tag">MongoDB</span>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <h4>프론트엔드 개발자</h4>
+                    <p>React 웹 애플리케이션 개발</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">TypeScript</span>
+                        <span class="tech-tag">Material-UI</span>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <h4>모바일 개발자</h4>
+                    <p>React Native 모바일 앱 개발</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">React Native</span>
+                        <span class="tech-tag">Expo</span>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <h4>DevOps 엔지니어</h4>
+                    <p>인프라 및 배포 관리</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Docker</span>
+                        <span class="tech-tag">Kubernetes</span>
+                        <span class="tech-tag">AWS</span>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <h4>데이터 과학자</h4>
+                    <p>알고리즘 및 모델링</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">PuLP</span>
+                        <span class="tech-tag">Scikit-learn</span>
+                        <span class="tech-tag">NumPy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 주요 마일스톤 -->
+        <div class="roadmap-section">
+            <h2 class="section-title">🎯 주요 마일스톤 및 성공 지표</h2>
+            <div class="timeline">
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">Week 2</div>
+                    <div class="timeline-title">MVP (Minimum Viable Product) 완성</div>
+                    <div class="timeline-description">기본 기능이 동작하는 프로토타입</div>
+                    <ul class="timeline-tasks">
+                        <li>기본 사용자 인증</li>
+                        <li>동물 정보 입력</li>
+                        <li>간단한 영양 요구량 계산</li>
+                        <li>기본 사료 배합 최적화</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">Month 3</div>
+                    <div class="timeline-title">Alpha 버전 완성</div>
+                    <div class="timeline-description">핵심 기능이 모두 구현된 버전</div>
+                    <ul class="timeline-tasks">
+                        <li>모든 마이크로서비스 개발 완료</li>
+                        <li>기본 웹 인터페이스 완성</li>
+                        <li>내부 테스트 완료</li>
+                        <li>성능 최적화 1차 완료</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">Month 6</div>
+                    <div class="timeline-title">Beta 버전 완성</div>
+                    <div class="timeline-description">사용자 테스트를 위한 버전</div>
+                    <ul class="timeline-tasks">
+                        <li>모바일 앱 개발 완료</li>
+                        <li>고급 분석 기능 구현</li>
+                        <li>사용자 테스트 진행</li>
+                        <li>보안 강화 완료</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">Month 10</div>
+                    <div class="timeline-title">Production 런칭</div>
+                    <div class="timeline-description">정식 서비스 시작</div>
+                    <ul class="timeline-tasks">
+                        <li>프로덕션 환경 안정화</li>
+                        <li>사용자 교육 완료</li>
+                        <li>모니터링 시스템 가동</li>
+                        <li>24/7 지원 시스템 구축</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 예산 및 리소스 -->
+        <div class="roadmap-section">
+            <h2 class="section-title">💰 예산 및 리소스 계획</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-title">개발 인력 비용</div>
+                    <div class="timeline-description">6명 개발팀 × 10개월</div>
+                    <ul class="timeline-tasks">
+                        <li>프로젝트 매니저: 월 800만원 × 10개월 = 8,000만원</li>
+                        <li>백엔드 개발자 2명: 월 600만원 × 2명 × 10개월 = 12,000만원</li>
+                        <li>프론트엔드 개발자: 월 550만원 × 10개월 = 5,500만원</li>
+                        <li>모바일 개발자: 월 550만원 × 10개월 = 5,500만원</li>
+                        <li>DevOps 엔지니어: 월 650만원 × 10개월 = 6,500만원</li>
+                        <li>데이터 과학자: 월 700만원 × 10개월 = 7,000만원</li>
+                        <li><strong>총 인력 비용: 44,500만원</strong></li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-title">인프라 및 기술 비용</div>
+                    <div class="timeline-description">클라우드 서비스 및 개발 도구</div>
+                    <ul class="timeline-tasks">
+                        <li>클라우드 인프라 (AWS/Azure): 월 200만원 × 10개월 = 2,000만원</li>
+                        <li>개발 도구 및 라이선스: 1,500만원</li>
+                        <li>보안 인증 및 테스트: 2,000만원</li>
+                        <li>데이터 마이그레이션: 1,000만원</li>
+                        <li><strong>총 인프라 비용: 6,500만원</strong></li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-title">기타 비용</div>
+                    <div class="timeline-description">마케팅, 교육, 운영 비용</div>
+                    <ul class="timeline-tasks">
+                        <li>사용자 교육 및 워크샵: 1,500만원</li>
+                        <li>마케팅 및 홍보: 2,000만원</li>
+                        <li>운영 및 유지보수 (1년): 3,000만원</li>
+                        <li>예비 비용 (10%): 5,750만원</li>
+                        <li><strong>총 기타 비용: 12,250만원</strong></li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-title">총 프로젝트 예산</div>
+                    <div class="timeline-description">전체 프로젝트 비용 요약</div>
+                    <ul class="timeline-tasks">
+                        <li><strong>인력 비용: 44,500만원 (69%)</strong></li>
+                        <li><strong>인프라 비용: 6,500만원 (10%)</strong></li>
+                        <li><strong>기타 비용: 12,250만원 (19%)</strong></li>
+                        <li><strong>예비 비용: 1,750만원 (2%)</strong></li>
+                        <li><strong>총 예산: 65,000만원</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 진행률 애니메이션
+        function animateProgress() {
+            const progressBars = document.querySelectorAll('.progress-fill');
+            progressBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 500);
+            });
+        }
+
+        // 페이지 로드 시 애니메이션 실행
+        document.addEventListener('DOMContentLoaded', function() {
+            animateProgress();
+        });
+    </script>
+</body>
+</html>

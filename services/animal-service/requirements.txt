@@ -1,0 +1,39 @@
+# FastAPI 및 웹 프레임워크
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# 데이터베이스
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+redis==5.0.1
+pymongo==4.6.0
+
+# 인증 및 보안
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-decouple==3.8
+
+# 데이터 검증
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# 유틸리티
+python-dateutil==2.8.2
+pytz==2023.3
+numpy==1.24.3
+pandas==2.0.3
+
+# 로깅
+structlog==23.2.0
+
+# 테스트
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# 개발 도구
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
